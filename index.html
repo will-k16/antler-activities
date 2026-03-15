@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antler Activities</title>
+  <!-- For fonts and stuff like that -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /*All colors referenced will use the --[COLOR NAME] format as variables so that we don't need to keep pasting the same hex code except single-use colors (like in the body background)*/
+    :root {
+      --red:    #ea0a2a;
+      --black:  #000000;
+      --white:  #ffffff;
+      --card:   #111111;
+      --gold:   #f5c518;
+      --gray:   #1a1a1a;
+      --muted:  #888888;
+    }
+    body {
+      background: #f0f0f0;
+      font-family: 'Open Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Antler activities red bar thing at the top */
+    header {
+      background: var(--red);
+      padding: 18px 24px;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    }
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 5.5vw, 3.6rem);
+      font-weight: 400;
+      color: var(--black);
+      letter-spacing: 5px;
+    }
+
+    /* Activities/Clubs/Athletics selctor */
+    nav {
+      background: var(--white);
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      border-bottom: 3px solid #ddd;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 4px solid transparent;
+      padding: 18px 40px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: #555;
+      margin-bottom: -3px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: var(--red); }
+    .tab-btn.active {
+      color: var(--black);
+      border-bottom-color: var(--red);
+    }
+    .tab-icon svg {
+      width: 28px;
+      height: 28px;
+      display: block;
+    }
+    main {
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px 60px;
+      flex: 1;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+    /* loading spinner thingy when getting data from sheet */
+    #loading {
+      text-align: center;
+      padding: 80px 0;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      color: #555;
+      letter-spacing: 2px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #ddd;
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #error-msg {
+      display: none;
+      text-align: center;
+      padding: 60px;
+      color: var(--red);
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+    }
+    /* cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .empty-section {
+      font-family: 'Oswald', sans-serif;
+      color: #999;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      padding: 40px 0;
+      text-align: center;
+    }
+    .card {
+      background: var(--card);
+      border: 3px solid var(--red);
+      border-radius: 12px;
+      padding: 22px 20px 18px;
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 270px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(234,10,42,0.3);
+    }
+    .card.student-led {
+      border-color: var(--gold);
+    }
+    .card.student-led:hover {
+      box-shadow: 0 8px 24px rgba(245,197,24,0.3);
+    }
+    .card-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+    .card-coaches {
+      font-size: 0.78rem;
+      color: #ccc;
+      line-height: 1.7;
+    }
+    .card-coaches a {
+      color: #aaa;
+      text-decoration: none;
+    }
+    .card-coaches a:hover { color: var(--gold); }
+    .card-overview {
+      font-size: 0.82rem;
+      color: #bbb;
+      line-height: 1.5;
+      flex: 1;
+      overflow: hidden;
+    }
+    .card-expand {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 6px;
+      border-top: 1px solid #333;
+      padding-top: 10px;
+    }
+    /* pop up display */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #modal-overlay.open {
+      display: flex;
+    }
+    #modal {
+      background: var(--card);
+      border: 3px solid var(--red);
+      border-top: 6px solid var(--red);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 30px 28px 28px;
+      color: var(--white);
+      position: relative;
+      scrollbar-width: thin;
+      scrollbar-color: var(--red) #222;
+    }
+    #modal.student-led-modal {
+      border-color: var(--gold);
+      border-top-color: var(--gold);
+    }
+    #modal::-webkit-scrollbar { width: 6px; }
+    #modal::-webkit-scrollbar-track { background: #222; }
+    #modal::-webkit-scrollbar-thumb { background: var(--red); border-radius: 3px; }
+    #modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 1.6rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    #modal-close:hover { background: rgba(234,10,42,0.15); }
+    .modal-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-right: 36px;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .modal-student-led-badge {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .modal-coaches {
+      font-size: 0.85rem;
+      color: #ccc;
+      line-height: 2;
+      margin-bottom: 18px;
+    }
+    .modal-coaches a {
+      color: #aaa;
+      text-decoration: none;
+    }
+    .modal-coaches a:hover { color: var(--gold); text-decoration: underline; }
+    .modal-section-heading {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--white);
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 4px;
+      margin: 20px 0 8px;
+    }
+    .modal-text {
+      font-size: 0.88rem;
+      color: #ccc;
+      line-height: 1.65;
+    }
+    .modal-links {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .modal-links a {
+      color: #5bc8ff;
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+    .modal-links a:hover { text-decoration: underline; }
+    /* search bar stuff */
+    #search-filter-bar {
+      background: var(--white);
+      border-bottom: 2px solid #e8e8e8;
+      padding: 12px 24px;
+    }
+    #search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    #search-input {
+      flex: 1;
+      padding: 10px 16px 10px 40px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.92rem;
+      outline: none;
+      /* search magnifying glass icon */
+      background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 12px center;
+      background-size: 18px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #search-input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(234,10,42,0.1);
+      background-color: #fff;
+    }
+    #filter-toggle {
+      padding: 10px 16px;
+      background: none;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      white-space: nowrap;
+      color: #555;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #filter-toggle:hover { border-color: #aaa; color: #333; }
+    #filter-toggle.active { border-color: var(--red); color: var(--red); }
+    #filter-panel {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .filter-chip {
+      padding: 6px 14px;
+      border: 2px solid #ddd;
+      border-radius: 20px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.78rem;
+      cursor: pointer;
+      background: none;
+      color: #555;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: #aaa; color: #333; }
+    .filter-chip.active { border-color: var(--red); background: var(--red); color: var(--white); }
+    #clear-filters {
+      padding: 6px 14px;
+      border: 2px solid var(--red);
+      border-radius: 20px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.78rem;
+      cursor: pointer;
+      background: none;
+      color: var(--red);
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    #clear-filters:hover { background: var(--red); color: var(--white); }
+    #search-results-view { display: none; }
+    .search-section-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #555;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 6px;
+      margin: 28px 0 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .search-section-header:first-child { margin-top: 0; }
+    .search-count {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: #999;
+      letter-spacing: 0;
+    }
+    .search-no-results {
+      text-align: center;
+      padding: 80px 0;
+      font-family: 'Oswald', sans-serif;
+      color: #999;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+    /* calendar tab */
+    .calendar-section { width: 100%; }
+    .calendar-frame {
+      width: 100%;
+      height: calc(100vh - 240px);
+      min-height: 560px;
+      border: none;
+      border-radius: 8px;
+      background: #fff;
+      display: block;
+    }
+    .calendar-fallback {
+      text-align: center;
+      margin-top: 10px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.82rem;
+      color: #888;
+    }
+    .calendar-fallback a { color: #5bc8ff; text-decoration: none; }
+    .calendar-fallback a:hover { text-decoration: underline; }
+    /* footer with our names and stuff */
+    footer {
+      background: #000000;
+      padding: 24px 40px;
+      color: rgb(102, 102, 102);
+      font-family: "Open Sans", Helvetica, Arial, Lucida, sans-serif;
+      font-size: 0.75rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <!-- Antler activities top bar plus antler logo from my github repo -->
+  <header>
+    <div class="header-title"><span>Antler</span><img src="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" alt="Antler" style="height:48px;width:auto;vertical-align:middle;margin:0 8px;"><span>Activities</span></div>
+  </header>
+  <!-- Each icon for the three selectors -->
+  <nav>
+    <button class="tab-btn active" data-section="athletics">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9 1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/></svg></span>Athletics
+    </button>
+    <button class="tab-btn" data-section="clubs">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>Clubs
+    </button>
+    <button class="tab-btn" data-section="activities">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></span>Activities
+    </button>
+    <button class="tab-btn" data-section="calendar">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></span>Activities Calendar
+    </button>
+  </nav>
+  <div id="search-filter-bar">
+    <div id="search-wrap">
+      <input id="search-input" type="text" placeholder="Search clubs, sports, activities…" autocomplete="off" />
+      <button id="filter-toggle">Filters</button>
+      <button id="clear-filters" style="display:none">✕ Clear</button>
+    </div>
+    <div id="filter-panel" style="display:none"></div>
+  </div>
+  <main>
+    <div id="loading">
+      <div class="spinner"></div>
+      Loading...
+    </div>
+    <div id="error-msg">Failed to load data. Please refresh the page.</div>
+    <div id="search-results-view"></div>
+    <div id="athletics" class="section">
+      <div class="card-grid" id="athletics-grid"></div>
+    </div>
+    <div id="clubs" class="section">
+      <div class="card-grid" id="clubs-grid"></div>
+    </div>
+    <div id="activities" class="section">
+      <div class="card-grid" id="activities-grid"></div>
+    </div>
+    <div id="calendar" class="section calendar-section">
+      <iframe
+        src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
+        class="calendar-frame"
+        title="Activities Calendar"
+        allowfullscreen
+        loading="lazy"
+      ></iframe>
+      <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+    </div>
+  </main>
+  <!-- sneaky little footer with our names ;) -->
+  <footer>
+Developed under the direction of Elkhorn Public School District in partnership with EHS student developers Will Kolander (epswkolander01@epsne.org) & Brenden Fisher (epsbfisher01@epsne.org).
+Special thanks to Sara Fjell (sfjell@epsne.org) and Theresa Crnkovich (tcrnkovich@epsne.org) for their invaluable support in bringing this ambitious endeavor to life.
+For inquiries, please contact anyone in the development team above.
+  </footer>
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal">
+      <button id="modal-close" aria-label="Close">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+  <script>
+    var allItems = [];
+    var activeFilters = {};
+    var overlay   = document.getElementById('modal-overlay');
+    var modal     = document.getElementById('modal');
+    var modalBody = document.getElementById('modal-body');
+    // filter types - if something like tech, for example, it looks for if the overview or name of the club/activity says tech, computer, program, cod (like coding and code), etc.
+    var FILTERS = [
+      { key: 'fall-sport',    label: 'Fall Sport',          test: function(i) { return i.type === 'Sport' && /fall/i.test(i.timeOfYear); } },
+      { key: 'spring-sport',  label: 'Spring Sport',        test: function(i) { return i.type === 'Sport' && /spring/i.test(i.timeOfYear); } },
+      { key: 'winter-sport',  label: 'Winter Sport',        test: function(i) { return i.type === 'Sport' && /winter/i.test(i.timeOfYear); } },
+      { key: 'year-round',    label: 'Year-Round',          test: function(i) { return /year.?round|all year|year.?long/i.test(i.timeOfYear); } },
+      { key: 'after-school',  label: 'After School',        test: function(i) { return /after school/i.test(i.meetingTimes); } },
+      { key: 'during-school', label: 'During School',       test: function(i) { return /during school|lunch|\bta\b|advisory/i.test(i.meetingTimes); } },
+      { key: 'weekends',      label: 'Weekends',            test: function(i) { return /weekend|saturday|sunday/i.test(i.meetingTimes); } },
+      { key: 'student-led',   label: 'Student-Led',         test: function(i) { return !!i.studentLed; } },
+      { key: 'tech',          label: 'Tech & STEM',         test: function(i) { return /tech|computer|program|cod|stem|digital|robot|engineer/i.test(i.name + ' ' + i.overview); } },
+      { key: 'arts',          label: 'Arts & Creative',     test: function(i) { return /art|music|band|choir|drama|theater|theatre|creative|design|paint|danc/i.test(i.name + ' ' + i.overview); } },
+      { key: 'academic',      label: 'Academic',            test: function(i) { return /academic|math|science|speech|debate|deca|fbla|nhs|honor|scholar/i.test(i.name + ' ' + i.overview); } },
+      { key: 'service',       label: 'Service & Community', test: function(i) { return /service|community|volunteer|ambassador|charity|outreach/i.test(i.name + ' ' + i.overview); } },
+      { key: 'competitive',   label: 'Competitive',         test: function(i) { return i.type === 'Sport' || /compet|tournament|championship|contest/i.test(i.name + ' ' + i.overview); } },
+      { key: 'boys-sport',    label: 'Boys Sport',          test: function(i) { return i.type === 'Sport' && !/girls/i.test(i.name + ' ' + i.overview); } },
+      { key: 'girls-sport',   label: 'Girls Sport',         test: function(i) { return i.type === 'Sport' && !/boys/i.test(i.name + ' ' + i.overview); } },
+    ];
+    //All stuff for searching/filtering with the headers based on current tab
+    var tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        tabs.forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        renderView();
+      });
+    });
+    function activeTab() {
+      var btn = document.querySelector('.tab-btn.active');
+      return btn ? btn.dataset.section : 'athletics';
+    }
+    function tabType(section) {
+      return section === 'athletics' ? 'Sport' : section === 'clubs' ? 'Club' : 'Activity';
+    }
+    function sectionLabel(type) {
+      return type === 'Sport' ? 'Athletics' : type === 'Club' ? 'Clubs' : 'Activities';
+    }
+    function matchesFilters(item) {
+      return FILTERS.every(function(f) { return !activeFilters[f.key] || f.test(item); });
+    }
+    function matchesSearch(item, q) {
+      if (!q) return true;
+      var text = [item.name, item.coachName1, item.coachName2].join(' ').toLowerCase();
+      return text.indexOf(q.toLowerCase()) !== -1;
+    }
+    // Fixing certain symbols like ampersands and greater/less than signs with the correct code format
+    function esc(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    // shortening length of overview
+    function truncate(str, len) {
+      if (!str) return '';
+      return str.length > len ? str.slice(0, len).trimEnd() + '…' : str;
+    }
+    // format of entire card view. Fills in all data when passed "item" which has everything from the sheet
+    function buildCard(item) {
+      var card = document.createElement('div');
+      card.className = 'card' + (item.studentLed ? ' student-led' : '');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', 'Expand ' + item.name);
+      var coachHtml = '<span>' + esc(item.coachName1) + ' &ndash; <a href="mailto:' + esc(item.coachEmail1) + '" onclick="event.stopPropagation()">' + esc(item.coachEmail1) + '</a></span>';
+      if (item.coachName2) {
+        coachHtml += '<br><span>' + esc(item.coachName2) + ' &ndash; <a href="mailto:' + esc(item.coachEmail2) + '" onclick="event.stopPropagation()">' + esc(item.coachEmail2) + '</a></span>';
+      }
+      var overviewHtml = item.overview ? '<div class="card-overview">' + esc(truncate(item.overview, 100)) + '</div>' : '';
+      card.innerHTML =
+        '<div class="card-name">' + esc(item.name) + '</div>' +
+        '<div class="card-coaches">' + coachHtml + '</div>' +
+        overviewHtml +
+        '<div class="card-expand">&#9654; CLICK TO EXPAND</div>';
+      card.addEventListener('click', function() { openModal(item); });
+      card.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(item); }
+      });
+      return card;
+    }
+    // uses all cards to build the entire grid
+    function renderTabGrid(tab) {
+      var grid = document.getElementById(tab + '-grid');
+      grid.innerHTML = '';
+      var items = allItems.filter(function(item) { return item.type === tabType(tab) && matchesFilters(item); }).sort(function(a, b) { return a.name.localeCompare(b.name); });
+      if (items.length === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'empty-section';
+        empty.textContent = FILTERS.some(function(f) { return !!activeFilters[f.key]; }) ? 'No entries match the current filters.' : 'No entries yet.';
+        grid.appendChild(empty);
+      } else {
+        items.forEach(function(item) { grid.appendChild(buildCard(item)); });
+      }
+    }
+    // searching specifically
+    function renderSearchResults(query) {
+      var view = document.getElementById('search-results-view');
+      view.innerHTML = '';
+      var currentType = tabType(activeTab());
+      var typeOrder = [currentType].concat(['Sport', 'Club', 'Activity'].filter(function(t) { return t !== currentType; }));
+      var totalFound = 0;
+      typeOrder.forEach(function(type) {
+        var group = allItems.filter(function(item) { return item.type === type && matchesSearch(item, query) && matchesFilters(item); }).sort(function(a, b) { return a.name.localeCompare(b.name); });
+        if (group.length === 0 && type !== currentType) return;
+        var header = document.createElement('div');
+        header.className = 'search-section-header';
+        header.innerHTML = sectionLabel(type) + ' <span class="search-count">' + (group.length > 0 ? group.length + ' result' + (group.length !== 1 ? 's' : '') : 'no results') + '</span>';
+        view.appendChild(header);
+        if (group.length === 0) {
+          var none = document.createElement('p');
+          none.className = 'empty-section';
+          none.textContent = 'No results found.';
+          view.appendChild(none);
+        } else {
+          var grid = document.createElement('div');
+          grid.className = 'card-grid';
+          group.forEach(function(item) { grid.appendChild(buildCard(item)); });
+          view.appendChild(grid);
+        }
+        totalFound += group.length;
+      });
+    }
+    // just for rendering either search or not
+    function renderView() {
+      var tab = activeTab();
+      var searchFilterBar = document.getElementById('search-filter-bar');
+      var searchView = document.getElementById('search-results-view');
+      var sections = document.querySelectorAll('.section');
+      // calendar tab: show iframe, hide search bar entirely
+      if (tab === 'calendar') {
+        searchFilterBar.style.display = 'none';
+        searchView.style.display = 'none';
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('calendar').style.display = 'block';
+        return;
+      }
+      searchFilterBar.style.display = '';
+      if (allItems.length === 0) return;
+      var query = document.getElementById('search-input').value.trim();
+      updateFilterToggleBadge();
+      if (query.length > 0) {
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        searchView.style.display = 'block';
+        renderSearchResults(query);
+      } else {
+        searchView.style.display = 'none';
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById(tab).style.display = 'block';
+        renderTabGrid(tab);
+      }
+    }
+    // filter button stuff
+    function updateFilterToggleBadge() {
+      var count = FILTERS.filter(function(f) { return !!activeFilters[f.key]; }).length;
+      var btn = document.getElementById('filter-toggle');
+      btn.textContent = count > 0 ? 'Filters (' + count + ')' : 'Filters';
+      btn.classList.toggle('active', count > 0);
+      document.getElementById('clear-filters').style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    function buildFilterChips() {
+      var panel = document.getElementById('filter-panel');
+      panel.innerHTML = '';
+      FILTERS.forEach(function(f) {
+        var chip = document.createElement('button');
+        chip.className = 'filter-chip';
+        chip.dataset.key = f.key;
+        chip.textContent = f.label;
+        chip.addEventListener('click', function() {
+          activeFilters[f.key] = !activeFilters[f.key];
+          chip.classList.toggle('active', !!activeFilters[f.key]);
+          updateFilterToggleBadge();
+          renderView();
+        });
+        panel.appendChild(chip);
+      });
+    }
+    document.getElementById('filter-toggle').addEventListener('click', function() {
+      var panel = document.getElementById('filter-panel');
+      panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+    });
+    document.getElementById('clear-filters').addEventListener('click', function() {
+      activeFilters = {};
+      document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+      updateFilterToggleBadge();
+      renderView();
+    });
+
+    document.getElementById('search-input').addEventListener('input', renderView);
+    // opens pop up and uses similar information to card rendering but with headers and stuff
+    function openModal(item) {
+      modal.classList.toggle('student-led-modal', item.studentLed);
+      var html = '';
+      html += '<div class="modal-name" id="modal-title">' + esc(item.name) + '</div>';
+      if (item.studentLed) {
+        html += '<span class="modal-student-led-badge">&#9733; Student-Led</span>';
+      }
+      html += '<div class="modal-coaches">';
+      html += esc(item.coachName1) + ' &ndash; <a href="mailto:' + esc(item.coachEmail1) + '">' + esc(item.coachEmail1) + '</a>';
+      if (item.coachName2) {
+        html += '<br>' + esc(item.coachName2) + ' &ndash; <a href="mailto:' + esc(item.coachEmail2) + '">' + esc(item.coachEmail2) + '</a>';
+      }
+      html += '</div>';
+      if (item.overview) {
+        html += '<div class="modal-section-heading">Overview</div>';
+        html += '<div class="modal-text">' + esc(item.overview) + '</div>';
+      }
+      if (item.missionStatement) {
+        html += '<div class="modal-section-heading">Mission Statement</div>';
+        html += '<div class="modal-text">' + esc(item.missionStatement) + '</div>';
+      }
+      if (item.qualifications) {
+        html += '<div class="modal-section-heading">Qualifications / Needs</div>';
+        html += '<div class="modal-text">' + esc(item.qualifications) + '</div>';
+      }
+      if (item.timeOfYear) {
+        html += '<div class="modal-section-heading">Time to Join</div>';
+        html += '<div class="modal-text">' + esc(item.timeOfYear) + '</div>';
+      }
+      if (item.meetingTimes) {
+        html += '<div class="modal-section-heading">Meeting Times</div>';
+        html += '<div class="modal-text">' + esc(item.meetingTimes) + '</div>';
+      }
+      if (item.links && item.links.length > 0) {
+        html += '<div class="modal-section-heading">Important Resources</div>';
+        html += '<div class="modal-links">';
+        item.links.forEach(function(link) {
+          html += '<a href="' + esc(link.url) + '" target="_blank" rel="noopener noreferrer">' + esc(link.title) + '</a>';
+        });
+        html += '</div>';
+      }
+      modalBody.innerHTML = html;
+      overlay.classList.add('open');
+      modal.scrollTop = 0;
+      document.getElementById('modal-close').focus();
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+    // just for testing errors and to make sure everything is working
+    function onSuccess(data) {
+      document.getElementById('loading').style.display = 'none';
+      var aliases = { Athletics: 'Sport', Sports: 'Sport', Sport: 'Sport', Club: 'Club', Clubs: 'Club', Activity: 'Activity', Activities: 'Activity' };
+      data.forEach(function(item) { item.type = aliases[item.type] || item.type; });
+      allItems = data;
+      buildFilterChips();
+      renderView();
+    }
+    function onError(err) {
+      document.getElementById('loading').style.display = 'none';
+      var errEl = document.getElementById('error-msg');
+      errEl.style.display = 'block';
+      errEl.textContent = 'Failed to load data: ' + (err || 'Unknown error') + '. Please refresh.';
+    }
+    // responsive design for mobile vs computer use
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) {
+      vp = document.createElement('meta');
+      vp.name = 'viewport';
+      document.head.appendChild(vp);
+    }
+    vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0';
+    // specifically mobile information for card sizes and stuff
+    function applyResponsive() {
+      var el = document.getElementById('mobile-css');
+      if (!el) {
+        el = document.createElement('style');
+        el.id = 'mobile-css';
+        document.head.appendChild(el);
+      }
+      var w = Math.min(window.innerWidth, window.screen.width);
+      if (w <= 768) {
+        el.textContent =
+          '.header-title{font-size:2rem;letter-spacing:3px}.header-title img{height:36px}' +
+          'nav{justify-content:space-evenly}' +
+          '.tab-btn{flex:1;padding:14px 0;font-size:1.05rem;letter-spacing:1px}' +
+          '.tab-icon svg{width:34px;height:34px}' +
+          '#search-filter-bar{padding:10px 14px}' +
+          '#search-input{font-size:1rem;padding:10px 14px 10px 40px}' +
+          '#filter-toggle{font-size:0.95rem;padding:10px 14px}' +
+          '#clear-filters{font-size:0.9rem;padding:10px 14px}' +
+          '#filter-panel{gap:8px;padding-top:10px;flex-wrap:wrap}' +
+          '.filter-chip{font-size:0.9rem;padding:9px 18px}' +
+          '.search-section-header{font-size:1.1rem;margin:20px 0 10px}' +
+          '.card-grid{grid-template-columns:1fr;gap:16px}' +
+          '.card{height:auto;min-height:260px;padding:24px 20px 18px;gap:14px}' +
+          '.card-name{font-size:2rem}' +
+          '.card-coaches{font-size:1.1rem;line-height:2}' +
+          '.card-overview{font-size:1.05rem;line-height:1.65;overflow:visible}' +
+          '.card-expand{font-size:1rem;padding-top:14px}' +
+          '#modal-overlay{padding:16px;align-items:center;justify-content:center}' +
+          '#modal{max-width:96vw;width:96vw;max-height:88vh;height:auto;border-radius:14px;padding:36px 26px 36px}' +
+          '#modal-close{font-size:2.8rem;top:8px;right:14px;padding:4px 10px}' +
+          '.modal-name{font-size:2.4rem;padding-right:52px}' +
+          '.modal-coaches{font-size:1.15rem;line-height:2.1}' +
+          '.modal-section-heading{font-size:1.25rem}' +
+          '.modal-text{font-size:1.1rem;line-height:1.8}' +
+          '.modal-links a{font-size:1.1rem}' +
+          '.modal-student-led-badge{font-size:0.95rem;padding:5px 14px}' +
+          'footer{font-size:0.82rem;line-height:2;padding:20px 24px}';
+      } else {
+        el.textContent = '';
+      }
+    }
+    applyResponsive();
+    window.addEventListener('resize', applyResponsive);
+    const SUPABASE_URL = 'https://paquacgjnqtzuhojwlvw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
+
+    fetch(`${SUPABASE_URL}/rest/v1/Activities?Visible=eq.true&select=*`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY
+      }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      console.log(data);
+      var mapped = data.map(function(row) {
+        var links = [];
+        if (row['links']) {
+          var parts = row['links'].split(',').map(function(s) { return s.trim(); });
+          for (var j = 0; j + 1 < parts.length; j += 2) {
+            if (parts[j] && parts[j+1]) links.push({ title: parts[j], url: parts[j+1] });
+          }
+        }
+        return {
+          type:             row['Type'],
+          name:             row['Name'],
+          coachName1:       row['Coach/Sponsor Name - 1'] || '',
+          coachEmail1:      row['Coach/Sponsor Email - 1'] || '',
+          coachName2:       row['Coach/Sponsor Name - 2'] || '',
+          coachEmail2:      row['Coach/Sponsor Email - 2'] || '',
+          overview:         row['Overview'] || '',
+          qualifications:   row['Qualifications/Needs'] || '',
+          timeOfYear:       row['Time of Year'] || '',
+          meetingTimes:     row['Meeting Times'] || '',
+          links:            links,
+          missionStatement: row['Mission Statement'] || '',
+          studentLed:       row['Student-Led'] || false
+        };
+      });
+      onSuccess(mapped);
+    })
+    .catch(function(err) { onError(err.message); });
+  </script>
+</body>
+</html>
