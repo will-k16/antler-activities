@@ -827,6 +827,10 @@ For inquiries, please contact anyone in the development team above.
     applyResponsive();
     window.addEventListener('resize', applyResponsive);
     const SUPABASE_URL = 'https://paquacgjnqtzuhojwlvw.supabase.co';
+    // SUPABASE ANON KEY -- safe to expose in frontend code.
+    // This key only identifies the project. Access is controlled by Row Level Security (RLS)
+    // policies in Supabase, which restrict all public requests to read-only.
+    // The service role key (which bypasses RLS) never appears here and stays in the Supabase dashboard.
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
 
     fetch(`${SUPABASE_URL}/rest/v1/Activities?Visible=eq.true&select=*`, {
