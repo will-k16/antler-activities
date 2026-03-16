@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antler Activities — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Runs before body renders to avoid flash of wrong theme -->
+  <script>if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:          #ea0a2a;
+      --black:        #000000;
+      --white:        #ffffff;
+      --gold:         #f5c518;
+      --bg:           #f0f0f0;
+      --text:         #111111;
+      --card:         #ffffff;
+      --border:       #e0e0e0;
+      --muted:        #888888;
+      --input-bg:     #fafafa;
+      --input-border: #dddddd;
+      --row-hover:    #fff5f6;
+      --danger:       #cc0000;
+      --success:      #1a8a3e;
+      --danger-bg:    #ffeaea;
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0f0f0f;
+      --text:         #e0e0e0;
+      --card:         #1c1c1c;
+      --border:       #2a2a2a;
+      --muted:        #888888;
+      --input-bg:     #222222;
+      --input-border: #383838;
+      --row-hover:    #1e1212;
+      --danger-bg:    #2a0a0a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Open Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--red);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      letter-spacing: 4px;
+      color: var(--black);
+    }
+    .header-badge {
+      background: rgba(0,0,0,0.18);
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    #btn-logout {
+      display: none;
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-logout:hover { background: rgba(0,0,0,0.3); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    #theme-toggle {
+      background: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 7px 8px;
+      color: var(--black);
+      transition: background 0.2s;
+      line-height: 0;
+    }
+    #theme-toggle:hover { background: rgba(0,0,0,0.28); }
+    #theme-toggle svg { width: 20px; height: 20px; display: block; }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .login-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      padding: 48px 44px 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .login-card h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .login-card p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 32px;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.92rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--red); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    #btn-login {
+      width: 100%;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    #btn-login:hover { background: #c50024; }
+    #btn-login:disabled { background: #aaa; cursor: not-allowed; }
+    #login-error {
+      display: none;
+      margin-top: 14px;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+
+    /* ── ADMIN SCREEN ── */
+    #admin-screen { display: none; flex: 1; flex-direction: column; }
+
+    #admin-toolbar {
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #admin-search {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 14px 9px 38px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E")
+        no-repeat 10px center;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+    }
+    #admin-search:focus { border-color: var(--red); }
+    #filter-type {
+      padding: 9px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+    }
+    #filter-type:focus { border-color: var(--red); }
+    #btn-add-new {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 9px 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #btn-add-new:hover { background: #c50024; }
+
+    #stats-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      gap: 24px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      letter-spacing: 1px;
+    }
+    .stat strong { color: var(--text); font-weight: 700; }
+
+    #table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    #table-loading {
+      text-align: center;
+      padding: 80px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #eee;
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #empty-table {
+      display: none;
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      font-size: 0.88rem;
+    }
+    thead { background: #111; color: var(--white); }
+    th {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 14px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--row-hover); }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .badge-sport    { background: #e8f0ff; color: #1a4aaa; }
+    .badge-club     { background: #f0e8ff; color: #6a1aaa; }
+    .badge-activity { background: #e8fff0; color: #1a7a3e; }
+
+    .toggle-switch { position: relative; width: 38px; height: 22px; display: inline-block; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--success); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-edit, .btn-delete {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-edit   { background: #111; color: #fff; }
+    .btn-delete { background: var(--danger-bg); color: var(--danger); }
+    .btn-edit:hover   { opacity: 0.75; }
+    .btn-delete:hover { opacity: 0.75; }
+
+    /* ── DRAWER ── */
+    #drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      justify-content: flex-end;
+    }
+    #drawer-overlay.open { display: flex; }
+    #drawer {
+      background: var(--card);
+      width: 100%;
+      max-width: 560px;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    #drawer-header {
+      background: var(--red);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #drawer-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 3px;
+      color: var(--black);
+    }
+    #drawer-close {
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: var(--black);
+      font-size: 1.2rem;
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    #drawer-close:hover { background: rgba(0,0,0,0.3); }
+    #drawer-body { flex: 1; padding: 24px 24px 8px; overflow-y: auto; }
+
+    .drawer-section-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 6px;
+      margin: 22px 0 14px;
+    }
+    .drawer-section-title:first-child { margin-top: 0; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-row .form-group { margin-bottom: 14px; }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px; height: 18px;
+      cursor: pointer;
+      accent-color: var(--red);
+      flex-shrink: 0;
+    }
+    .checkbox-group label {
+      font-size: 0.88rem;
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .field-hint { font-size: 0.76rem; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+    #drawer-footer {
+      border-top: 2px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      background: var(--card);
+    }
+    #btn-save {
+      flex: 1;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-save:hover { background: #c50024; }
+    #btn-save:disabled { background: #bbb; cursor: not-allowed; }
+    #btn-cancel-drawer {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      padding: 13px 22px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #btn-cancel-drawer:hover { border-color: #aaa; }
+
+    /* ── CONFIRM DELETE ── */
+    #confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #confirm-overlay.open { display: flex; }
+    #confirm-box {
+      background: var(--card);
+      border-radius: 14px;
+      border-top: 5px solid var(--danger);
+      padding: 36px 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.2);
+    }
+    #confirm-box h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    #confirm-box p { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    #confirm-box strong { color: var(--text); }
+    .confirm-btns { display: flex; gap: 10px; }
+    #btn-confirm-delete {
+      flex: 1;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-confirm-delete:hover { background: #aa0000; }
+    #btn-confirm-cancel {
+      flex: 1;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #111;
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+    }
+    #toast.show  { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 4px solid var(--success); }
+    #toast.error   { border-left: 4px solid var(--danger); }
+
+    @media (max-width: 700px) {
+      #drawer { max-width: 100vw; }
+      .form-row { grid-template-columns: 1fr; }
+      #table-wrap { padding: 12px; }
+      th, td { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <img src="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" alt="Antler" style="height:40px;width:auto;" />
+    <span class="header-title">Antler Activities</span>
+    <span class="header-badge">Admin</span>
+  </div>
+  <div class="header-right">
+    <button id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+      <!-- Moon icon — shown in light mode (click to go dark) -->
+      <svg id="admin-theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <!-- Sun icon — shown in dark mode (click to go light) -->
+      <svg id="admin-theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+    </button>
+    <button id="btn-logout">Sign Out</button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h2>Admin Sign In</h2>
+    <p>Sign in with your authorized admin account to manage activities.</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button id="btn-login">SIGN IN</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-screen">
+  <div id="admin-toolbar">
+    <input type="text" id="admin-search" placeholder="Search by name, coach, or keyword…" />
+    <select id="filter-type">
+      <option value="">All Types</option>
+      <option value="Sport">Athletics</option>
+      <option value="Club">Club</option>
+      <option value="Activity">Activity</option>
+    </select>
+    <button id="btn-add-new">＋ Add New</button>
+  </div>
+  <div id="stats-bar">
+    <span class="stat">Total: <strong id="stat-total">—</strong></span>
+    <span class="stat">Visible: <strong id="stat-visible">—</strong></span>
+    <span class="stat">Hidden: <strong id="stat-hidden">—</strong></span>
+  </div>
+  <div id="table-wrap">
+    <div id="table-loading"><div class="spinner"></div>Loading…</div>
+    <div id="empty-table">No entries found.</div>
+    <table id="activities-table" style="display:none">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Coach / Sponsor</th>
+          <th>Meeting Times</th>
+          <th>Visible</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div id="drawer-overlay">
+  <div id="drawer">
+    <div id="drawer-header">
+      <span id="drawer-title">Add New Activity</span>
+      <button id="drawer-close">✕</button>
+    </div>
+    <div id="drawer-body">
+      <div class="drawer-section-title">Basic Info</div>
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. Drama Club" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type *</label>
+          <select id="f-type">
+            <option value="">— Select —</option>
+            <option value="Sport">Sport (Athletics)</option>
+            <option value="Club">Club</option>
+            <option value="Activity">Activity</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time of Year</label>
+          <input type="text" id="f-timeofyear" placeholder="e.g. Fall, Year-Round" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Meeting Times</label>
+        <input type="text" id="f-meetingtimes" placeholder="e.g. After school, Mon &amp; Wed" />
+      </div>
+
+      <div class="drawer-section-title">Coach / Sponsor 1</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" id="f-coach1name" placeholder="First Last" />
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="f-coach1email" placeholder="coach@school.edu" />
+        </div>
+      </div>
+
+      <div class="drawer-section-title">Coach / Sponsor 2 <span style="font-weight:400;opacity:0.6;font-size:0.7rem">(optional)</span></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="f-coach2name" placeholder="First Last" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-coach2email" placeholder="coach@school.edu" />
+        </div>
+      </div>
+
+      <div class="drawer-section-title">Description</div>
+      <div class="form-group">
+        <label>Overview</label>
+        <textarea id="f-overview" placeholder="Brief description shown on cards…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Mission Statement</label>
+        <textarea id="f-mission" placeholder="Club's mission statement…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Qualifications / Needs</label>
+        <textarea id="f-qualifications" placeholder="What students need to join…"></textarea>
+      </div>
+
+      <div class="drawer-section-title">Links <span style="font-weight:400;opacity:0.6;font-size:0.7rem">(optional)</span></div>
+      <div class="form-group">
+        <label>Links</label>
+        <textarea id="f-links" placeholder="Title, https://url.com, Title 2, https://url2.com"></textarea>
+        <div class="field-hint">Enter pairs separated by commas: <em>Title, URL, Title 2, URL 2</em></div>
+      </div>
+
+      <div class="drawer-section-title">Settings</div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="f-visible" />
+        <label for="f-visible">Visible to students on the public site</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="f-studentled" />
+        <label for="f-studentled">Student-Led (shows gold border &amp; badge)</label>
+      </div>
+    </div>
+    <div id="drawer-footer">
+      <button id="btn-cancel-drawer">Cancel</button>
+      <button id="btn-save">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <h3>Delete Activity?</h3>
+    <p>You are about to permanently delete <strong id="confirm-name"></strong>. This cannot be undone.</p>
+    <div class="confirm-btns">
+      <button id="btn-confirm-cancel">Cancel</button>
+      <button id="btn-confirm-delete">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+
+  // ── Theme toggle (shared localStorage key with main page) ──
+  (function() {
+    function updateThemeIcon() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('admin-theme-icon-moon').style.display = isDark ? 'none'  : 'block';
+      document.getElementById('admin-theme-icon-sun').style.display  = isDark ? 'block' : 'none';
+    }
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      updateThemeIcon();
+    });
+    updateThemeIcon();
+  })();
+
+  const SUPABASE_URL = 'https://paquacgjnqtzuhojwlvw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let allRows        = [];
+  let editingId      = null;   // PK value of the row being edited (null = adding new)
+  let deleteId       = null;   // PK value of the row pending deletion
+  let saveInProgress = false;
+  let PK_COL         = 'id';   // auto-detected from first loaded row
+
+  // Inspect the first returned row to find the real primary key column name.
+  // IMPORTANT: we check for non-null values — a column existing with null values
+  // is useless as a PK and is what causes the "column does not exist" Supabase error.
+  function detectPK(row) {
+    if (!row) return;
+
+    const known = new Set([
+      'Type','Name','Visible','Student-Led','Overview','Mission Statement',
+      'Qualifications/Needs','Time of Year','Meeting Times','links',
+      'Coach/Sponsor Name - 1','Coach/Sponsor Email - 1',
+      'Coach/Sponsor Name - 2','Coach/Sponsor Email - 2'
+    ]);
+
+    // First pass: find a non-null value for common PK names
+    for (const candidate of ['id','ID','Id','row_id','uuid','pk']) {
+      if (row[candidate] != null) { PK_COL = candidate; return; }
+    }
+
+    // Second pass: find ANY non-known column with a non-null value
+    for (const k of Object.keys(row)) {
+      if (!known.has(k) && row[k] != null) { PK_COL = k; return; }
+    }
+
+    // Final fallback: the id column exists but has null values in every row (common
+    // Supabase setup issue). Use 'Name' as the row identifier instead — it's always
+    // populated and unique enough for an activities list.
+    PK_COL = 'Name';
+    console.warn(
+      '[Antler Admin] ⚠️  No non-null primary key column found — falling back to "Name".\n' +
+      'This means edit/delete/visibility will match rows by their Name value.\n' +
+      'To fix permanently, run this in your Supabase SQL Editor:\n' +
+      '  ALTER TABLE "Activities" ADD COLUMN IF NOT EXISTS row_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY;\n' +
+      'or populate the existing id column with real values.'
+    );
+  }
+
+  // Elements
+  const loginScreen    = document.getElementById('login-screen');
+  const adminScreen    = document.getElementById('admin-screen');
+  const btnLogout      = document.getElementById('btn-logout');
+  const btnLogin       = document.getElementById('btn-login');
+  const loginEmail     = document.getElementById('login-email');
+  const loginPw        = document.getElementById('login-password');
+  const loginError     = document.getElementById('login-error');
+  const adminSearch    = document.getElementById('admin-search');
+  const filterType     = document.getElementById('filter-type');
+  const tableBody      = document.getElementById('table-body');
+  const tableEl        = document.getElementById('activities-table');
+  const tableLoading   = document.getElementById('table-loading');
+  const emptyTable     = document.getElementById('empty-table');
+  const drawerOverlay  = document.getElementById('drawer-overlay');
+  const drawerTitle    = document.getElementById('drawer-title');
+  const btnSave        = document.getElementById('btn-save');
+  const confirmOverlay = document.getElementById('confirm-overlay');
+  const confirmName    = document.getElementById('confirm-name');
+
+  // ── Auth helpers ──
+
+  // Wraps any promise with a timeout so a hung query never stalls the UI forever
+  function withTimeout(promise, ms, timeoutMsg) {
+    const timer = new Promise(resolve =>
+      setTimeout(() => resolve({ data: null, error: { message: timeoutMsg } }), ms)
+    );
+    return Promise.race([promise, timer]);
+  }
+
+  // Checks whether a given user ID has the 'admin' role in user_roles
+  async function checkAdminRole(userId) {
+    const { data, error } = await withTimeout(
+      sb.from('user_roles').select('role').eq('user_id', userId).single(),
+      8000,
+      'Permission check timed out — please try again.'
+    );
+    return !error && data && data.role === 'admin';
+  }
+
+  function showLoginScreen(errorMsg) {
+    loginScreen.style.display = 'flex';
+    adminScreen.style.display = 'none';
+    btnLogout.style.display   = 'none';
+    btnLogin.textContent      = 'SIGN IN';
+    btnLogin.disabled         = false;
+    if (errorMsg) showLoginError(errorMsg);
+  }
+
+  function showAdminScreen() {
+    loginError.style.display  = 'none';
+    loginScreen.style.display = 'none';
+    adminScreen.style.display = 'flex';
+    btnLogout.style.display   = 'block';
+  }
+
+  // ── Auth state: only used for page-load session restore and sign-out ──
+  // doLogin() handles the SIGNED_IN path itself, so we only watch for
+  // INITIAL_SESSION (existing session from a previous visit) and SIGNED_OUT.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'INITIAL_SESSION' && session) {
+      // User already had a valid session — verify they're still an admin
+      const isAdmin = await checkAdminRole(session.user.id).catch(() => false);
+      if (isAdmin) {
+        showAdminScreen();
+        loadData();
+      } else {
+        await sb.auth.signOut().catch(() => {});
+      }
+    } else if (event === 'SIGNED_OUT') {
+      showLoginScreen();
+    }
+  });
+
+  // ── Login ──
+  btnLogin.addEventListener('click', doLogin);
+  loginPw.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const email = loginEmail.value.trim();
+    const pw    = loginPw.value;
+    if (!email || !pw) { showLoginError('Please enter both email and password.'); return; }
+
+    btnLogin.textContent     = 'Signing in…';
+    btnLogin.disabled        = true;
+    loginError.style.display = 'none';
+
+    try {
+      // Step 1 — authenticate (10 s timeout so the button never stalls forever)
+      const { data: authData, error: authError } = await withTimeout(
+        sb.auth.signInWithPassword({ email, password: pw }),
+        10000,
+        'Connection timed out. Please check your internet and try again.'
+      );
+
+      if (authError) {
+        const msg = (authError.message || '').toLowerCase();
+        showLoginError(
+          msg.includes('invalid') || msg.includes('credentials') || msg.includes('email') || msg.includes('password')
+            ? 'Incorrect email or password. Please try again.'
+            : authError.message
+        );
+        return;
+      }
+
+      // Step 2 — check admin role
+      const isAdmin = await checkAdminRole(authData.user.id).catch(() => false);
+      if (!isAdmin) {
+        await sb.auth.signOut().catch(() => {});
+        showLoginError('Access denied — your account does not have admin permissions.');
+        return;
+      }
+
+      // Step 3 — grant access
+      showAdminScreen();
+      loadData();
+
+    } catch (e) {
+      showLoginError('Unexpected error: ' + (e.message || 'Please try again.'));
+    } finally {
+      // Always re-enable the button no matter what happened above
+      btnLogin.textContent = 'SIGN IN';
+      btnLogin.disabled    = false;
+    }
+  }
+
+  function showLoginError(msg) {
+    loginError.textContent   = msg;
+    loginError.style.display = 'block';
+  }
+
+  btnLogout.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    showToast('Signed out successfully.', 'success');
+  });
+
+  // ── Load data ──
+  async function loadData() {
+    tableLoading.style.display = 'block';
+    tableEl.style.display      = 'none';
+    emptyTable.style.display   = 'none';
+
+    const { data, error } = await sb
+      .from('Activities')
+      .select('*')
+      .order('Name', { ascending: true });
+
+    tableLoading.style.display = 'none';
+
+    if (error) {
+      showToast('Failed to load data: ' + error.message, 'error');
+      return;
+    }
+    allRows = data || [];
+    if (allRows.length > 0) {
+      detectPK(allRows[0]);
+      // ── Diagnostic: open browser console (F12 → Console) to see this ──
+      console.log('[Antler Admin] Columns returned by Supabase:', Object.keys(allRows[0]));
+      console.log('[Antler Admin] All values in first row:', allRows[0]);
+      console.log('[Antler Admin] Primary key column selected:', `"${PK_COL}"`);
+      console.log('[Antler Admin] Sample PK value:', allRows[0][PK_COL]);
+      if (allRows[0][PK_COL] == null) {
+        console.error('[Antler Admin] ❌ PK value is null — edit/delete/visibility will fail until this is resolved.');
+        showToast('⚠️ Check browser console (F12) — primary key issue detected.', 'error');
+      }
+    }
+    renderTable();
+  }
+
+  // ── Render table ──
+  function renderTable() {
+    const q    = adminSearch.value.trim().toLowerCase();
+    const type = filterType.value;
+
+    const rows = allRows.filter(r => {
+      const matchType   = !type || r['Type'] === type;
+      const matchSearch = !q ||
+        (r['Name']                   || '').toLowerCase().includes(q) ||
+        (r['Coach/Sponsor Name - 1'] || '').toLowerCase().includes(q) ||
+        (r['Coach/Sponsor Name - 2'] || '').toLowerCase().includes(q) ||
+        (r['Overview']               || '').toLowerCase().includes(q) ||
+        (r['Meeting Times']          || '').toLowerCase().includes(q);
+      return matchType && matchSearch;
+    });
+
+    document.getElementById('stat-total').textContent   = allRows.length;
+    document.getElementById('stat-visible').textContent = allRows.filter(r => r['Visible']).length;
+    document.getElementById('stat-hidden').textContent  = allRows.filter(r => !r['Visible']).length;
+
+    if (rows.length === 0) {
+      tableEl.style.display    = 'none';
+      emptyTable.style.display = 'block';
+      return;
+    }
+    emptyTable.style.display = 'none';
+    tableEl.style.display    = 'table';
+    tableBody.innerHTML      = '';
+
+    rows.forEach(row => {
+      const tr      = document.createElement('tr');
+      const pkVal   = String(row[PK_COL] ?? '');   // raw PK value as string
+      const typeLow = (row['Type'] || '').toLowerCase();
+      const badgeCls = typeLow === 'sport' ? 'badge-sport' : typeLow === 'club' ? 'badge-club' : 'badge-activity';
+      const coaches  = [row['Coach/Sponsor Name - 1'], row['Coach/Sponsor Name - 2']].filter(Boolean).join(', ') || '—';
+
+      tr.innerHTML = `
+        <td style="font-weight:600" title="${esc(row['Name'] || '')}">${esc(row['Name'] || '—')}</td>
+        <td><span class="badge ${badgeCls}">${esc(row['Type'] || '—')}</span></td>
+        <td title="${esc(coaches)}">${esc(coaches)}</td>
+        <td title="${esc(row['Meeting Times'] || '')}">${esc(row['Meeting Times'] || '—')}</td>
+        <td>
+          <label class="toggle-switch">
+            <input type="checkbox" class="vis-toggle" data-id="${esc(pkVal)}" ${row['Visible'] ? 'checked' : ''} />
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit"   data-id="${esc(pkVal)}">Edit</button>
+            <button class="btn-delete" data-id="${esc(pkVal)}" data-name="${esc(row['Name'] || '')}">Delete</button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    // visibility toggles
+    tableBody.querySelectorAll('.vis-toggle').forEach(cb => {
+      cb.addEventListener('change', async e => {
+        const id      = e.target.dataset.id;   // raw string PK value
+        const visible = e.target.checked;
+        const { error } = await sb
+          .from('Activities')
+          .update({ 'Visible': visible })
+          .eq(PK_COL, id);
+        if (error) {
+          showToast('Failed to update visibility: ' + error.message, 'error');
+          e.target.checked = !visible;
+        } else {
+          const row = allRows.find(r => String(r[PK_COL]) === id);
+          if (row) row['Visible'] = visible;
+          document.getElementById('stat-visible').textContent = allRows.filter(r => r['Visible']).length;
+          document.getElementById('stat-hidden').textContent  = allRows.filter(r => !r['Visible']).length;
+          showToast('Visibility updated.', 'success');
+        }
+      });
+    });
+
+    // edit buttons
+    tableBody.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', () => openDrawer(btn.dataset.id));   // raw string PK
+    });
+
+    // delete buttons
+    tableBody.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteId = btn.dataset.id;   // raw string PK
+        confirmName.textContent = btn.dataset.name;
+        confirmOverlay.classList.add('open');
+      });
+    });
+  }
+
+  adminSearch.addEventListener('input', renderTable);
+  filterType.addEventListener('change', renderTable);
+
+  // ── Drawer ──
+  function openDrawer(id) {
+    // id is a raw string PK value, or null/undefined for new
+    editingId = (id != null && id !== '') ? id : null;
+
+    // Always clear all fields first
+    document.getElementById('f-name').value           = '';
+    document.getElementById('f-type').value           = '';
+    document.getElementById('f-coach1name').value     = '';
+    document.getElementById('f-coach1email').value    = '';
+    document.getElementById('f-coach2name').value     = '';
+    document.getElementById('f-coach2email').value    = '';
+    document.getElementById('f-overview').value       = '';
+    document.getElementById('f-mission').value        = '';
+    document.getElementById('f-qualifications').value = '';
+    document.getElementById('f-timeofyear').value     = '';
+    document.getElementById('f-meetingtimes').value   = '';
+    document.getElementById('f-links').value          = '';
+    document.getElementById('f-visible').checked      = true;
+    document.getElementById('f-studentled').checked   = false;
+    drawerTitle.textContent = 'Add New Activity';
+
+    // If editing, find the row and populate all fields
+    if (editingId) {
+      const row = allRows.find(r => String(r[PK_COL]) === String(editingId));
+      if (row) {
+        drawerTitle.textContent = 'Editing: ' + (row['Name'] || 'Activity');
+        document.getElementById('f-name').value           = row['Name']                    || '';
+        document.getElementById('f-type').value           = row['Type']                    || '';
+        document.getElementById('f-coach1name').value     = row['Coach/Sponsor Name - 1']  || '';
+        document.getElementById('f-coach1email').value    = row['Coach/Sponsor Email - 1'] || '';
+        document.getElementById('f-coach2name').value     = row['Coach/Sponsor Name - 2']  || '';
+        document.getElementById('f-coach2email').value    = row['Coach/Sponsor Email - 2'] || '';
+        document.getElementById('f-overview').value       = row['Overview']                || '';
+        document.getElementById('f-mission').value        = row['Mission Statement']       || '';
+        document.getElementById('f-qualifications').value = row['Qualifications/Needs']    || '';
+        document.getElementById('f-timeofyear').value     = row['Time of Year']            || '';
+        document.getElementById('f-meetingtimes').value   = row['Meeting Times']           || '';
+        document.getElementById('f-links').value          = row['links']                   || '';
+        document.getElementById('f-visible').checked      = !!row['Visible'];
+        document.getElementById('f-studentled').checked   = !!row['Student-Led'];
+      }
+    }
+
+    // reset save button state
+    btnSave.textContent = 'SAVE';
+    btnSave.disabled    = false;
+    saveInProgress      = false;
+
+    drawerOverlay.classList.add('open');
+    document.getElementById('f-name').focus();
+  }
+
+  function closeDrawer() {
+    drawerOverlay.classList.remove('open');
+    editingId      = null;
+    saveInProgress = false;
+    btnSave.textContent = 'SAVE';
+    btnSave.disabled    = false;
+  }
+
+  document.getElementById('btn-add-new').addEventListener('click',     () => openDrawer(null));
+  document.getElementById('drawer-close').addEventListener('click',    closeDrawer);
+  document.getElementById('btn-cancel-drawer').addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', e => { if (e.target === drawerOverlay) closeDrawer(); });
+
+  // ── Save ──
+  btnSave.addEventListener('click', async () => {
+    if (saveInProgress) return;
+
+    const name        = document.getElementById('f-name').value.trim();
+    const type        = document.getElementById('f-type').value;
+    const coach1name  = document.getElementById('f-coach1name').value.trim();
+    const coach1email = document.getElementById('f-coach1email').value.trim();
+
+    if (!name)        { showToast('Name is required.', 'error'); return; }
+    if (!type)        { showToast('Type is required.', 'error'); return; }
+    if (!coach1name)  { showToast('Coach/Sponsor name is required.', 'error'); return; }
+    if (!coach1email) { showToast('Coach/Sponsor email is required.', 'error'); return; }
+
+    saveInProgress      = true;
+    btnSave.disabled    = true;
+    btnSave.textContent = 'Saving…';
+
+    const payload = {
+      'Name':                    name,
+      'Type':                    type,
+      'Coach/Sponsor Name - 1':  coach1name,
+      'Coach/Sponsor Email - 1': coach1email,
+      'Coach/Sponsor Name - 2':  document.getElementById('f-coach2name').value.trim()  || null,
+      'Coach/Sponsor Email - 2': document.getElementById('f-coach2email').value.trim() || null,
+      'Overview':                document.getElementById('f-overview').value.trim()      || null,
+      'Mission Statement':       document.getElementById('f-mission').value.trim()       || null,
+      'Qualifications/Needs':    document.getElementById('f-qualifications').value.trim()|| null,
+      'Time of Year':            document.getElementById('f-timeofyear').value.trim()    || null,
+      'Meeting Times':           document.getElementById('f-meetingtimes').value.trim()  || null,
+      'links':                   document.getElementById('f-links').value.trim()         || null,
+      'Visible':                 document.getElementById('f-visible').checked,
+      'Student-Led':             document.getElementById('f-studentled').checked,
+    };
+
+    let error;
+    try {
+      if (editingId) {
+        ({ error } = await sb.from('Activities').update(payload).eq(PK_COL, editingId));
+      } else {
+        ({ error } = await sb.from('Activities').insert(payload));
+      }
+    } catch (e) {
+      error = { message: e.message || 'Unknown error' };
+    }
+
+    saveInProgress      = false;
+    btnSave.disabled    = false;
+    btnSave.textContent = 'SAVE';
+
+    if (error) {
+      showToast('Error saving: ' + error.message, 'error');
+    } else {
+      showToast(editingId ? 'Activity updated!' : 'Activity added!', 'success');
+      closeDrawer();
+      await loadData();
+    }
+  });
+
+  // ── Delete ──
+  document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+    if (deleteId == null || deleteId === '') return;
+    const { error } = await sb.from('Activities').delete().eq(PK_COL, deleteId);
+    confirmOverlay.classList.remove('open');
+    if (error) {
+      showToast('Failed to delete: ' + error.message, 'error');
+    } else {
+      showToast('Activity deleted.', 'success');
+      deleteId = null;
+      await loadData();
+    }
+  });
+  document.getElementById('btn-confirm-cancel').addEventListener('click', () => {
+    confirmOverlay.classList.remove('open');
+    deleteId = null;
+  });
+
+  // ── Toast ──
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = (type === 'success' ? '✓  ' : '✕  ') + msg;
+    toast.className   = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.className = ''; }, 3400);
+  }
+
+  // ── Escape HTML ──
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
