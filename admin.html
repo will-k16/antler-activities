@@ -1641,14 +1641,21 @@
       btn.addEventListener('click', async () => {
         const uid  = btn.dataset.uid;
         const name = btn.dataset.name;
-        if (!confirm(`Remove admin access for ${name}?\n\nThey will no longer be able to sign into the admin panel. Their Supabase Auth account is NOT deleted.`)) return;
-        const { error } = await sb.from('user_roles').delete().eq('user_id', uid);
-        if (error) {
-          showToast('Failed to remove user: ' + error.message, 'error');
-        } else {
-          showToast(`${name} removed.`, 'success');
-          await loadUsers();
+        if (!confirm(`Permanently delete ${name}?\n\nThis removes them from the admin panel AND deletes their login account entirely. This cannot be undone.`)) return;
+
+        const { error: rpcError } = await sb.rpc('delete_auth_user', { target_user_id: uid });
+        if (rpcError) {
+          showToast('Failed to delete user: ' + rpcError.message, 'error');
+          return;
         }
+
+        const { error: roleError } = await sb.from('user_roles').delete().eq('user_id', uid);
+        if (roleError) {
+          showToast('Auth account deleted but role cleanup failed: ' + roleError.message, 'error');
+        } else {
+          showToast(`${name} fully deleted.`, 'success');
+        }
+        await loadUsers();
       });
     });
   }
