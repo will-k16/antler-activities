@@ -771,6 +771,28 @@
       color: var(--muted);
       margin-left: 6px;
     }
+
+    /* ── CHANGE LOG ── */
+    #view-changelog { display: none; flex: 1; flex-direction: column; }
+    #view-changelog.active { display: flex; }
+    #changelog-toolbar {
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+    }
+    #changelog-toolbar-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+    #changelog-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    .badge-created { background: #e8fff0; color: #1a7a3e; }
+    .badge-updated { background: #e8f0ff; color: #1a4aaa; }
+    .badge-deleted { background: var(--danger-bg); color: var(--danger); }
+    .changes-summary { font-size: 0.8rem; color: var(--muted); white-space: normal; line-height: 1.4; max-width: 280px; }
   </style>
 </head>
 <body>
@@ -819,6 +841,7 @@
   <div id="admin-nav">
     <button class="nav-tab active" data-view="activities">Activities</button>
     <button class="nav-tab"        data-view="users">User Management</button>
+    <button class="nav-tab"        data-view="changelog">Change Log</button>
   </div>
 
   <!-- ── ACTIVITIES VIEW ── -->
@@ -853,6 +876,29 @@
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── CHANGE LOG VIEW ── -->
+  <div id="view-changelog">
+    <div id="changelog-toolbar">
+      <span id="changelog-toolbar-label">Record of all activity changes made by admins</span>
+    </div>
+    <div id="changelog-table-wrap">
+      <div id="changelog-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="changelog-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No changes logged yet.</div>
+      <table id="changelog-table" style="display:none">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Who</th>
+            <th>Action</th>
+            <th>Activity</th>
+            <th>What Changed</th>
+          </tr>
+        </thead>
+        <tbody id="changelog-body"></tbody>
       </table>
     </div>
   </div>
@@ -1056,45 +1102,13 @@
   let editingId      = null;   // PK value of the row being edited (null = adding new)
   let deleteId       = null;   // PK value of the row pending deletion
   let saveInProgress = false;
-  let PK_COL         = 'id';   // auto-detected from first loaded row
+  let PK_COL         = 'Name'; // Activities table uses Name as primary key
   let currentUserRole = null;  // 'admin' or 'super_admin', set on login
   let currentUserId   = null;  // UUID of the signed-in user (used to flag self in user table)
+  let currentUserName = null;  // Display name of the signed-in user (used for change log)
 
-  // Inspect the first returned row to find the real primary key column name.
-  // IMPORTANT: we check for non-null values — a column existing with null values
-  // is useless as a PK and is what causes the "column does not exist" Supabase error.
-  function detectPK(row) {
-    if (!row) return;
-
-    const known = new Set([
-      'Type','Name','Visible','Student-Led','Overview','Mission Statement',
-      'Qualifications/Needs','Time of Year','Meeting Times','links',
-      'Coach/Sponsor Name - 1','Coach/Sponsor Email - 1',
-      'Coach/Sponsor Name - 2','Coach/Sponsor Email - 2'
-    ]);
-
-    // First pass: find a non-null value for common PK names
-    for (const candidate of ['id','ID','Id','row_id','uuid','pk']) {
-      if (row[candidate] != null) { PK_COL = candidate; return; }
-    }
-
-    // Second pass: find ANY non-known column with a non-null value
-    for (const k of Object.keys(row)) {
-      if (!known.has(k) && row[k] != null) { PK_COL = k; return; }
-    }
-
-    // Final fallback: the id column exists but has null values in every row (common
-    // Supabase setup issue). Use 'Name' as the row identifier instead — it's always
-    // populated and unique enough for an activities list.
-    PK_COL = 'Name';
-    console.warn(
-      '[Antler Admin] ⚠️  No non-null primary key column found — falling back to "Name".\n' +
-      'This means edit/delete/visibility will match rows by their Name value.\n' +
-      'To fix permanently, run this in your Supabase SQL Editor:\n' +
-      '  ALTER TABLE "Activities" ADD COLUMN IF NOT EXISTS row_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY;\n' +
-      'or populate the existing id column with real values.'
-    );
-  }
+  // Activities table uses Name as the primary key — names must be unique.
+  function detectPK(row) { /* no-op: PK_COL is hardcoded to 'Name' */ }
 
   // Elements
   const loginScreen    = document.getElementById('login-screen');
@@ -1130,7 +1144,7 @@
   async function getUserRole(userId) {
     console.log('[Antler Auth] Checking role for user_id:', userId);
     const { data, error } = await withTimeout(
-      sb.from('user_roles').select('role').eq('user_id', userId).single(),
+      sb.from('user_roles').select('role, name').eq('user_id', userId).single(),
       8000,
       'Permission check timed out — please try again.'
     );
@@ -1139,6 +1153,7 @@
       console.error('[Antler Auth] ❌ Role check failed. Cause:', error?.message || 'data was null/undefined');
       return null;
     }
+    currentUserName = data.name || null;
     console.log('[Antler Auth] ✅ Role found:', data.role);
     return data.role; // 'admin' or 'super_admin'
   }
@@ -1154,8 +1169,10 @@
     document.querySelectorAll('.nav-tab').forEach(t => { t.classList.toggle('active', t.dataset.view === 'activities'); });
     document.getElementById('view-activities').classList.remove('hidden');
     document.getElementById('view-users').classList.remove('active');
+    document.getElementById('view-changelog').classList.remove('active');
     currentUserRole = null;
     currentUserId   = null;
+    currentUserName = null;
     if (errorMsg) showLoginError(errorMsg);
   }
 
@@ -1165,10 +1182,9 @@
     loginScreen.style.display = 'none';
     adminScreen.style.display = 'flex';
     btnLogout.style.display   = 'block';
-    // Show the tab nav only for super_admins
-    if (role === 'super_admin') {
-      document.getElementById('admin-nav').classList.add('visible');
-    }
+    // Show the tab nav for all admins; hide User Management tab for non-super_admins
+    document.getElementById('admin-nav').classList.add('visible');
+    document.querySelector('.nav-tab[data-view="users"]').style.display = role === 'super_admin' ? '' : 'none';
   }
 
   // ── Auth state: only used for page-load session restore and sign-out ──
@@ -1360,6 +1376,7 @@
           if (row) row['Visible'] = visible;
           document.getElementById('stat-visible').textContent = allRows.filter(r => r['Visible']).length;
           document.getElementById('stat-hidden').textContent  = allRows.filter(r => !r['Visible']).length;
+          logChange('updated', row ? row['Name'] : id, { old: { 'Visible': !visible }, new: { 'Visible': visible } });
           showToast('Visibility updated.', 'success');
         }
       });
@@ -1474,6 +1491,9 @@
       'Student-Led':             document.getElementById('f-studentled').checked,
     };
 
+    // Capture old values before saving so we can diff for the change log
+    const oldRow = editingId ? allRows.find(r => String(r[PK_COL]) === String(editingId)) : null;
+
     let error;
     try {
       if (editingId) {
@@ -1492,6 +1512,19 @@
     if (error) {
       showToast('Error saving: ' + error.message, 'error');
     } else {
+      if (editingId && oldRow) {
+        // Only log fields that actually changed
+        const changesOld = {}, changesNew = {};
+        for (const key of Object.keys(payload)) {
+          if (String(payload[key] ?? '') !== String(oldRow[key] ?? '')) {
+            changesOld[key] = oldRow[key];
+            changesNew[key] = payload[key];
+          }
+        }
+        logChange('updated', payload['Name'] || oldRow['Name'], { old: changesOld, new: changesNew });
+      } else if (!editingId) {
+        logChange('created', payload['Name'], { new: payload });
+      }
       showToast(editingId ? 'Activity updated!' : 'Activity added!', 'success');
       closeDrawer();
       await loadData();
@@ -1501,12 +1534,14 @@
   // ── Delete ──
   document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
     if (deleteId == null || deleteId === '') return;
+    const deletedRow = allRows.find(r => String(r[PK_COL]) === String(deleteId));
     const { error } = await sb.from('Activities').delete().eq(PK_COL, deleteId);
     confirmOverlay.classList.remove('open');
     if (error) {
       showToast('Failed to delete: ' + error.message, 'error');
     } else {
       showToast('Activity deleted.', 'success');
+      if (deletedRow) logChange('deleted', deletedRow['Name'], { old: deletedRow });
       deleteId = null;
       await loadData();
     }
@@ -1526,6 +1561,23 @@
     toastTimer = setTimeout(() => { toast.className = ''; }, 3400);
   }
 
+  // ── Change Log ──
+  // Fire-and-forget: logs a change to the change_log table without blocking the UI.
+  // action:       'created' | 'updated' | 'deleted'
+  // activityName: the activity's Name string
+  // changes:      { old: {...}, new: {...} } — only include changed fields for updates
+  function logChange(action, activityName, changes) {
+    sb.from('change_log').insert({
+      user_id:    currentUserId,
+      name:       currentUserName || 'Unknown',
+      action:     action,
+      activity:   activityName || '(unknown)',
+      changes:    changes,
+    }).then(({ error }) => {
+      if (error) console.warn('[Antler Admin] Change log insert failed:', error.message);
+    });
+  }
+
   // ── Escape HTML ──
   function esc(str) {
     return String(str || '')
@@ -1540,14 +1592,21 @@
     tab.addEventListener('click', () => {
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      const view = tab.dataset.view;
+      const view         = tab.dataset.view;
+      const usersView    = document.getElementById('view-users');
+      const changelogView = document.getElementById('view-changelog');
       document.getElementById('view-activities').classList.toggle('hidden', view !== 'activities');
-      const usersView = document.getElementById('view-users');
       if (view === 'users') {
         usersView.classList.add('active');
+        changelogView.classList.remove('active');
         loadUsers();
+      } else if (view === 'changelog') {
+        usersView.classList.remove('active');
+        changelogView.classList.add('active');
+        loadChangelog();
       } else {
         usersView.classList.remove('active');
+        changelogView.classList.remove('active');
       }
     });
   });
@@ -1658,6 +1717,88 @@
         await loadUsers();
       });
     });
+  }
+
+  // ── Change Log view ──
+  async function loadChangelog() {
+    const loading = document.getElementById('changelog-loading');
+    const table   = document.getElementById('changelog-table');
+    const empty   = document.getElementById('changelog-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb
+      .from('change_log')
+      .select('*')
+      .order('changed_at', { ascending: false })
+      .limit(500);
+
+    loading.style.display = 'none';
+    if (error) {
+      showToast('Failed to load change log: ' + error.message, 'error');
+      return;
+    }
+    renderChangelog(data || []);
+  }
+
+  function renderChangelog(rows) {
+    const tbody = document.getElementById('changelog-body');
+    const table = document.getElementById('changelog-table');
+    const empty = document.getElementById('changelog-empty');
+    tbody.innerHTML = '';
+
+    if (rows.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    rows.forEach(entry => {
+      const tr          = document.createElement('tr');
+      const actionClass = entry.action === 'created' ? 'badge-created'
+                        : entry.action === 'deleted'  ? 'badge-deleted'
+                        :                              'badge-updated';
+      const summary    = formatChangeSummary(entry.action, entry.changes);
+      const detailJson = entry.changes ? JSON.stringify(entry.changes, null, 2) : '';
+
+      tr.innerHTML = `
+        <td style="white-space:nowrap;color:var(--muted);font-size:0.83rem">${esc(formatChangeDate(entry.changed_at))}</td>
+        <td style="font-weight:600">${esc(entry.name || '—')}</td>
+        <td><span class="badge ${actionClass}">${esc(entry.action || '—')}</span></td>
+        <td style="font-weight:600" title="${esc(entry.activity || '')}">${esc(entry.activity || '—')}</td>
+        <td class="changes-summary" title="${esc(detailJson)}">${esc(summary)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function formatChangeDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+         + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function formatChangeSummary(action, changes) {
+    if (!changes) return '—';
+    if (action === 'created') return 'Activity created';
+    if (action === 'deleted') return 'Activity deleted';
+    if (action === 'updated') {
+      const fields = Object.keys(changes.old || {});
+      if (fields.length === 0) return 'No fields changed';
+      return fields.map(f => {
+        const o = (changes.old || {})[f];
+        const n = (changes.new || {})[f];
+        if (typeof o === 'boolean' || typeof n === 'boolean') {
+          return `${f}: ${o} → ${n}`;
+        }
+        return f;
+      }).join(', ');
+    }
+    return '—';
   }
 
   // Add user form
