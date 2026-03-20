@@ -4,22 +4,85 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Antler Activities</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" />
   <!-- For fonts and stuff like that -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Runs before body renders to avoid flash of wrong theme -->
+  <script>if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     /*All colors referenced will use the --[COLOR NAME] format as variables so that we don't need to keep pasting the same hex code except single-use colors (like in the body background)*/
     :root {
+      /* Brand colors - unchanged between themes */
       --red:    #ea0a2a;
       --black:  #000000;
       --white:  #ffffff;
-      --card:   #111111;
       --gold:   #f5c518;
-      --gray:   #1a1a1a;
       --muted:  #888888;
+
+      /* Theme variables - light (default) */
+      --bg:                  #f0f0f0;
+      --text:                #111111;
+      --card:                #e4e4e4;
+      --card-text:           #111111;
+      --card-muted:          #555555;
+      --card-link:           #0055aa;
+      --gray:                #1a1a1a;
+      --nav-bg:              #ffffff;
+      --nav-border:          #dddddd;
+      --tab-color:           #555555;
+      --tab-active-color:    #000000;
+      --load-color:          #555555;
+      --spinner-border:      #dddddd;
+      --empty-color:         #999999;
+      --bar-bg:              #ffffff;
+      --bar-border:          #e8e8e8;
+      --input-bg:            #fafafa;
+      --input-focus-bg:      #ffffff;
+      --input-border:        #dddddd;
+      --filter-border:       #dddddd;
+      --filter-color:        #555555;
+      --filter-hover-border: #aaaaaa;
+      --filter-hover-color:  #333333;
+      --section-hdr-color:   #555555;
+      --card-border:         #333333;
+      --card-expand-border:  #b8b8b8;
+      --modal-track:         #c0c0c0;
     }
+
+    [data-theme="dark"] {
+      --bg:                  #0f0f0f;
+      --text:                #e0e0e0;
+      --card:                #1c1c1c;
+      --card-text:           #ffffff;
+      --card-muted:          #bbbbbb;
+      --card-link:           #5bc8ff;
+      --gray:                #252525;
+      --nav-bg:              #181818;
+      --nav-border:          #2a2a2a;
+      --tab-color:           #aaaaaa;
+      --tab-active-color:    #ffffff;
+      --load-color:          #aaaaaa;
+      --spinner-border:      #2a2a2a;
+      --empty-color:         #666666;
+      --bar-bg:              #181818;
+      --bar-border:          #2a2a2a;
+      --input-bg:            #222222;
+      --input-focus-bg:      #2a2a2a;
+      --input-border:        #383838;
+      --filter-border:       #383838;
+      --filter-color:        #aaaaaa;
+      --filter-hover-border: #555555;
+      --filter-hover-color:  #e0e0e0;
+      --section-hdr-color:   #aaaaaa;
+      --card-border:         #555555;
+      --card-expand-border:  #2a2a2a;
+      --modal-track:         #2a2a2a;
+    }
+
     body {
-      background: #f0f0f0;
+      background: var(--bg);
+      color: var(--text);
       font-family: 'Open Sans', sans-serif;
       min-height: 100vh;
       display: flex;
@@ -32,6 +95,7 @@
       padding: 18px 24px;
       text-align: center;
       box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      position: relative;
     }
     .header-title {
       font-family: 'Bebas Neue', sans-serif;
@@ -41,13 +105,31 @@
       letter-spacing: 5px;
     }
 
-    /* Activities/Clubs/Athletics selctor */
+    /* Theme toggle button */
+    #theme-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 7px 8px;
+      color: var(--black);
+      transition: background 0.2s;
+      line-height: 0;
+    }
+    #theme-toggle:hover { background: rgba(0,0,0,0.28); }
+    #theme-toggle svg { width: 22px; height: 22px; display: block; }
+
+    /* Activities/Clubs/Athletics selector */
     nav {
-      background: var(--white);
+      background: var(--nav-bg);
       display: flex;
       justify-content: center;
       gap: 0;
-      border-bottom: 3px solid #ddd;
+      border-bottom: 3px solid var(--nav-border);
     }
     .tab-btn {
       background: none;
@@ -63,13 +145,13 @@
       font-size: 1rem;
       font-weight: 400;
       letter-spacing: 2px;
-      color: #555;
+      color: var(--tab-color);
       margin-bottom: -3px;
       transition: color 0.2s, border-color 0.2s;
     }
     .tab-btn:hover { color: var(--red); }
     .tab-btn.active {
-      color: var(--black);
+      color: var(--tab-active-color);
       border-bottom-color: var(--red);
     }
     .tab-icon svg {
@@ -92,13 +174,13 @@
       padding: 80px 0;
       font-family: 'Oswald', sans-serif;
       font-size: 1.3rem;
-      color: #555;
+      color: var(--load-color);
       letter-spacing: 2px;
     }
     .spinner {
       width: 48px;
       height: 48px;
-      border: 5px solid #ddd;
+      border: 5px solid var(--spinner-border);
       border-top-color: var(--red);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -121,7 +203,7 @@
     }
     .empty-section {
       font-family: 'Oswald', sans-serif;
-      color: #999;
+      color: var(--empty-color);
       font-size: 1.1rem;
       letter-spacing: 1px;
       padding: 40px 0;
@@ -129,10 +211,10 @@
     }
     .card {
       background: var(--card);
-      border: 3px solid var(--red);
+      border: 3px solid var(--card-border);
       border-radius: 12px;
       padding: 22px 20px 18px;
-      color: var(--white);
+      color: var(--card-text);
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -142,7 +224,7 @@
     }
     .card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(234,10,42,0.3);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
     .card.student-led {
       border-color: var(--gold);
@@ -160,17 +242,17 @@
     }
     .card-coaches {
       font-size: 0.78rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 1.7;
     }
     .card-coaches a {
-      color: #aaa;
+      color: var(--card-muted);
       text-decoration: none;
     }
     .card-coaches a:hover { color: var(--gold); }
     .card-overview {
       font-size: 0.82rem;
-      color: #bbb;
+      color: var(--card-muted);
       line-height: 1.5;
       flex: 1;
       overflow: hidden;
@@ -182,7 +264,7 @@
       color: var(--muted);
       text-align: center;
       margin-top: 6px;
-      border-top: 1px solid #333;
+      border-top: 1px solid var(--card-expand-border);
       padding-top: 10px;
     }
     /* pop up display */
@@ -209,17 +291,17 @@
       max-height: 88vh;
       overflow-y: auto;
       padding: 30px 28px 28px;
-      color: var(--white);
+      color: var(--card-text);
       position: relative;
       scrollbar-width: thin;
-      scrollbar-color: var(--red) #222;
+      scrollbar-color: var(--red) var(--modal-track);
     }
     #modal.student-led-modal {
       border-color: var(--gold);
       border-top-color: var(--gold);
     }
     #modal::-webkit-scrollbar { width: 6px; }
-    #modal::-webkit-scrollbar-track { background: #222; }
+    #modal::-webkit-scrollbar-track { background: var(--modal-track); }
     #modal::-webkit-scrollbar-thumb { background: var(--red); border-radius: 3px; }
     #modal-close {
       position: absolute;
@@ -261,12 +343,12 @@
     }
     .modal-coaches {
       font-size: 0.85rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 2;
       margin-bottom: 18px;
     }
     .modal-coaches a {
-      color: #aaa;
+      color: var(--card-muted);
       text-decoration: none;
     }
     .modal-coaches a:hover { color: var(--gold); text-decoration: underline; }
@@ -276,14 +358,14 @@
       font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: var(--white);
+      color: var(--card-text);
       border-bottom: 2px solid var(--red);
       padding-bottom: 4px;
       margin: 20px 0 8px;
     }
     .modal-text {
       font-size: 0.88rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 1.65;
     }
     .modal-links {
@@ -293,15 +375,15 @@
       margin-top: 4px;
     }
     .modal-links a {
-      color: #5bc8ff;
+      color: var(--card-link);
       font-size: 0.88rem;
       text-decoration: none;
     }
     .modal-links a:hover { text-decoration: underline; }
     /* search bar stuff */
     #search-filter-bar {
-      background: var(--white);
-      border-bottom: 2px solid #e8e8e8;
+      background: var(--bar-bg);
+      border-bottom: 2px solid var(--bar-border);
       padding: 12px 24px;
     }
     #search-wrap {
@@ -314,35 +396,40 @@
     #search-input {
       flex: 1;
       padding: 10px 16px 10px 40px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--input-border);
       border-radius: 8px;
       font-family: 'Open Sans', sans-serif;
       font-size: 0.92rem;
       outline: none;
+      color: var(--text);
       /* search magnifying glass icon */
-      background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 12px center;
+      background-color: var(--input-bg);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 12px center;
       background-size: 18px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
+    #search-input::placeholder { color: var(--filter-color); }
     #search-input:focus {
       border-color: var(--red);
       box-shadow: 0 0 0 3px rgba(234,10,42,0.1);
-      background-color: #fff;
+      background-color: var(--input-focus-bg);
     }
     #filter-toggle {
       padding: 10px 16px;
       background: none;
-      border: 2px solid #ddd;
+      border: 2px solid var(--filter-border);
       border-radius: 8px;
       font-family: 'Oswald', sans-serif;
       font-size: 0.85rem;
       letter-spacing: 1px;
       cursor: pointer;
       white-space: nowrap;
-      color: #555;
+      color: var(--filter-color);
       transition: border-color 0.2s, color 0.2s;
     }
-    #filter-toggle:hover { border-color: #aaa; color: #333; }
+    #filter-toggle:hover { border-color: var(--filter-hover-border); color: var(--filter-hover-color); }
     #filter-toggle.active { border-color: var(--red); color: var(--red); }
     #filter-panel {
       max-width: 1300px;
@@ -354,17 +441,17 @@
     }
     .filter-chip {
       padding: 6px 14px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--filter-border);
       border-radius: 20px;
       font-family: 'Open Sans', sans-serif;
       font-size: 0.78rem;
       cursor: pointer;
       background: none;
-      color: #555;
+      color: var(--filter-color);
       transition: border-color 0.15s, background 0.15s, color 0.15s;
       white-space: nowrap;
     }
-    .filter-chip:hover { border-color: #aaa; color: #333; }
+    .filter-chip:hover { border-color: var(--filter-hover-border); color: var(--filter-hover-color); }
     .filter-chip.active { border-color: var(--red); background: var(--red); color: var(--white); }
     #clear-filters {
       padding: 6px 14px;
@@ -386,8 +473,8 @@
       font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: #555;
-      border-bottom: 2px solid #ddd;
+      color: var(--section-hdr-color);
+      border-bottom: 2px solid var(--nav-border);
       padding-bottom: 6px;
       margin: 28px 0 14px;
       display: flex;
@@ -399,23 +486,46 @@
       font-family: 'Open Sans', sans-serif;
       font-size: 0.75rem;
       font-weight: 400;
-      color: #999;
+      color: var(--empty-color);
       letter-spacing: 0;
     }
     .search-no-results {
       text-align: center;
       padding: 80px 0;
       font-family: 'Oswald', sans-serif;
-      color: #999;
+      color: var(--empty-color);
       font-size: 1rem;
       letter-spacing: 1px;
     }
-    /* calendar tab */
-    .calendar-section { width: 100%; }
+    /* resources section */
+    .resources-section { width: 100%; }
+    #resources-subnav {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--nav-border);
+      margin-bottom: 24px;
+    }
+    .res-tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 12px 28px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--tab-color);
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .res-tab-btn:hover { color: var(--red); }
+    .res-tab-btn.active { color: var(--tab-active-color); border-bottom-color: var(--red); }
     .calendar-frame {
       width: 100%;
-      height: calc(100vh - 240px);
-      min-height: 560px;
+      height: calc(100vh - 300px);
+      min-height: 500px;
       border: none;
       border-radius: 8px;
       background: #fff;
@@ -426,10 +536,88 @@
       margin-top: 10px;
       font-family: 'Open Sans', sans-serif;
       font-size: 0.82rem;
-      color: #888;
+      color: var(--muted);
     }
-    .calendar-fallback a { color: #5bc8ff; text-decoration: none; }
+    .calendar-fallback a { color: var(--card-link); text-decoration: none; }
     .calendar-fallback a:hover { text-decoration: underline; }
+    /* contact info */
+    .school-section { margin-bottom: 40px; }
+    .school-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      border-bottom: 3px solid var(--red);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .contact-card {
+      background: var(--card);
+      border: 2px solid var(--card-expand-border);
+      border-radius: 10px;
+      padding: 18px 16px;
+      color: var(--card-text);
+    }
+    .contact-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .contact-role { font-size: 0.78rem; color: var(--card-muted); margin-bottom: 10px; }
+    .contact-email a { color: var(--card-link); text-decoration: none; font-size: 0.8rem; }
+    .contact-email a:hover { text-decoration: underline; }
+    /* links */
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .link-card {
+      background: var(--card);
+      border: 2px solid var(--card-expand-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .link-card:hover { border-color: var(--red); box-shadow: 0 4px 16px rgba(234,10,42,0.15); }
+    .link-card a {
+      color: var(--card-text);
+      text-decoration: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .link-card a:hover { color: var(--card-link); }
+    .link-icon { color: var(--card-link); flex-shrink: 0; line-height: 0; }
+    .res-empty {
+      font-family: 'Oswald', sans-serif;
+      color: var(--empty-color);
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      padding: 40px 0;
+      text-align: center;
+    }
+    .res-loading {
+      text-align: center;
+      padding: 60px 0;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      color: var(--load-color);
+      letter-spacing: 2px;
+    }
     /* footer with our names and stuff */
     footer {
       background: #000000;
@@ -446,6 +634,12 @@
   <!-- Antler activities top bar plus antler logo from my github repo -->
   <header>
     <div class="header-title"><span>Antler</span><img src="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" alt="Antler" style="height:48px;width:auto;vertical-align:middle;margin:0 8px;"><span>Activities</span></div>
+    <button id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+      <!-- Moon icon - shown in light mode (click to go dark) -->
+      <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <!-- Sun icon - shown in dark mode (click to go light) -->
+      <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+    </button>
   </header>
   <!-- Each icon for the three selectors -->
   <nav>
@@ -458,8 +652,8 @@
     <button class="tab-btn" data-section="activities">
       <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></span>Activities
     </button>
-    <button class="tab-btn" data-section="calendar">
-      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></span>Activities Calendar
+    <button class="tab-btn" data-section="resources">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></span>Resources
     </button>
   </nav>
   <div id="search-filter-bar">
@@ -471,6 +665,7 @@
     <div id="filter-panel" style="display:none"></div>
   </div>
   <main>
+    <!-- loading spinner -->
     <div id="loading">
       <div class="spinner"></div>
       Loading...
@@ -486,15 +681,31 @@
     <div id="activities" class="section">
       <div class="card-grid" id="activities-grid"></div>
     </div>
-    <div id="calendar" class="section calendar-section">
-      <iframe
-        src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
-        class="calendar-frame"
-        title="Activities Calendar"
-        allowfullscreen
-        loading="lazy"
-      ></iframe>
-      <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+  <!-- resources nav for headers like contacts and links and calendar and stuff-->
+    <div id="resources" class="section resources-section">
+      <div id="resources-subnav">
+        <button class="res-tab-btn active" data-resview="calendar">Calendar</button>
+        <button class="res-tab-btn" data-resview="contacts">Contact Info</button>
+        <button class="res-tab-btn" data-resview="links">Links</button>
+      </div>
+      <div id="resview-calendar">
+        <iframe
+          src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
+          class="calendar-frame"
+          title="Activities Calendar"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+        <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+      </div>
+      <div id="resview-contacts" style="display:none">
+        <div id="contacts-loading" class="res-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+        <div id="contacts-content"></div>
+      </div>
+      <div id="resview-links" style="display:none">
+        <div id="links-loading" class="res-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+        <div id="links-content"></div>
+      </div>
     </div>
   </main>
   <!-- sneaky little footer with our names ;) -->
@@ -502,7 +713,9 @@
 Developed under the direction of Elkhorn Public School District in partnership with EHS student developers Will Kolander (epswkolander01@epsne.org) & Brenden Fisher (epsbfisher01@epsne.org).
 Special thanks to Sara Fjell (sfjell@epsne.org) and Theresa Crnkovich (tcrnkovich@epsne.org) for their invaluable support in bringing this ambitious endeavor to life.
 For inquiries, please contact anyone in the development team above.
+<a href="admin.html" style="display:inline-block;margin-top:10px;color:#444;font-size:0.7rem;text-decoration:none;opacity:0.5;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">&#x1F512;</a>
   </footer>
+  <!-- admin lock link (may change in the future idk) ^^^^^-->
   <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div id="modal">
       <button id="modal-close" aria-label="Close">&times;</button>
@@ -510,29 +723,61 @@ For inquiries, please contact anyone in the development team above.
     </div>
   </div>
   <script>
+    // Theme toggle
+    function updateThemeIcon() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('theme-icon-moon').style.display = isDark ? 'none' : 'block';
+      document.getElementById('theme-icon-sun').style.display  = isDark ? 'block' : 'none';
+    }
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      updateThemeIcon();
+    });
+    updateThemeIcon();
+
     var allItems = [];
     var activeFilters = {};
     var overlay   = document.getElementById('modal-overlay');
     var modal     = document.getElementById('modal');
     var modalBody = document.getElementById('modal-body');
-    // filter types - if something like tech, for example, it looks for if the overview or name of the club/activity says tech, computer, program, cod (like coding and code), etc.
-    var FILTERS = [
-      { key: 'fall-sport',    label: 'Fall Sport',          test: function(i) { return i.type === 'Sport' && /fall/i.test(i.timeOfYear); } },
-      { key: 'spring-sport',  label: 'Spring Sport',        test: function(i) { return i.type === 'Sport' && /spring/i.test(i.timeOfYear); } },
-      { key: 'winter-sport',  label: 'Winter Sport',        test: function(i) { return i.type === 'Sport' && /winter/i.test(i.timeOfYear); } },
-      { key: 'year-round',    label: 'Year-Round',          test: function(i) { return /year.?round|all year|year.?long/i.test(i.timeOfYear); } },
-      { key: 'after-school',  label: 'After School',        test: function(i) { return /after school/i.test(i.meetingTimes); } },
-      { key: 'during-school', label: 'During School',       test: function(i) { return /during school|lunch|\bta\b|advisory/i.test(i.meetingTimes); } },
-      { key: 'weekends',      label: 'Weekends',            test: function(i) { return /weekend|saturday|sunday/i.test(i.meetingTimes); } },
-      { key: 'student-led',   label: 'Student-Led',         test: function(i) { return !!i.studentLed; } },
-      { key: 'tech',          label: 'Tech & STEM',         test: function(i) { return /tech|computer|program|cod|stem|digital|robot|engineer/i.test(i.name + ' ' + i.overview); } },
-      { key: 'arts',          label: 'Arts & Creative',     test: function(i) { return /art|music|band|choir|drama|theater|theatre|creative|design|paint|danc/i.test(i.name + ' ' + i.overview); } },
-      { key: 'academic',      label: 'Academic',            test: function(i) { return /academic|math|science|speech|debate|deca|fbla|nhs|honor|scholar/i.test(i.name + ' ' + i.overview); } },
-      { key: 'service',       label: 'Service & Community', test: function(i) { return /service|community|volunteer|ambassador|charity|outreach/i.test(i.name + ' ' + i.overview); } },
-      { key: 'competitive',   label: 'Competitive',         test: function(i) { return i.type === 'Sport' || /compet|tournament|championship|contest/i.test(i.name + ' ' + i.overview); } },
-      { key: 'boys-sport',    label: 'Boys Sport',          test: function(i) { return i.type === 'Sport' && !/girls/i.test(i.name + ' ' + i.overview); } },
-      { key: 'girls-sport',   label: 'Girls Sport',         test: function(i) { return i.type === 'Sport' && !/boys/i.test(i.name + ' ' + i.overview); } },
-    ];
+    // Filters are loaded dynamically from the Supabase 'filters' table
+    var FILTERS = [];
+    // Builds a test function for a filter row fetched from the DB
+    function buildFilterTestFn(f) {
+      return function(item) {
+        if (f.require_type && item.type !== f.require_type) return false;
+        if (!f.field) return true;
+        if (f.field === 'studentLed') return !!item.studentLed;
+        if (!f.pattern) return true;
+        var re = new RegExp(f.pattern, 'i');
+        var val = '';
+        if (f.field === 'timeOfYear')    val = item.timeOfYear    || '';
+        else if (f.field === 'meetingTimes')  val = item.meetingTimes  || '';
+        else if (f.field === 'nameOverview')  val = (item.name || '') + ' ' + (item.overview || '');
+        var matches = re.test(val);
+        return f.negate ? !matches : matches;
+      };
+    }
+    // Resources data (loaded lazily when the Resources tab is first opened)
+    var resourcesData = null;
+    var resourcesRequested = false;
+    // School name normalization for Contact Info grouping
+    var SCHOOL_ORDER = ['Elkhorn High School', 'Elkhorn North High School', 'Elkhorn South High School'];
+    function normalizeSchool(school) {
+      if (!school) return null;
+      var s = school.trim();
+      if (/^ehs$/i.test(s) || /elkhorn\s+(high|hs)/i.test(s))  return 'Elkhorn High School';
+      if (/^enhs$/i.test(s) || /elkhorn\s+north/i.test(s))     return 'Elkhorn North High School';
+      if (/^eshs$/i.test(s) || /elkhorn\s+south/i.test(s))     return 'Elkhorn South High School';
+      return s;
+    }
     //All stuff for searching/filtering with the headers based on current tab
     var tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(function(btn) {
@@ -644,12 +889,13 @@ For inquiries, please contact anyone in the development team above.
       var searchFilterBar = document.getElementById('search-filter-bar');
       var searchView = document.getElementById('search-results-view');
       var sections = document.querySelectorAll('.section');
-      // calendar tab: show iframe, hide search bar entirely
-      if (tab === 'calendar') {
+      // resources tab: show section, hide search bar, lazy-load data
+      if (tab === 'resources') {
         searchFilterBar.style.display = 'none';
         searchView.style.display = 'none';
         sections.forEach(function(s) { s.style.display = 'none'; });
-        document.getElementById('calendar').style.display = 'block';
+        document.getElementById('resources').style.display = 'block';
+        loadResources();
         return;
       }
       searchFilterBar.style.display = '';
@@ -704,6 +950,117 @@ For inquiries, please contact anyone in the development team above.
     });
 
     document.getElementById('search-input').addEventListener('input', renderView);
+    // ── Resources sub-nav ──────────────────────────────────────────────────────
+    document.querySelectorAll('.res-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.res-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        switchResView(btn.dataset.resview);
+      });
+    });
+
+    function switchResView(view) {
+      document.getElementById('resview-calendar').style.display  = view === 'calendar'  ? 'block' : 'none';
+      document.getElementById('resview-contacts').style.display  = view === 'contacts'  ? 'block' : 'none';
+      document.getElementById('resview-links').style.display     = view === 'links'     ? 'block' : 'none';
+      if (view === 'contacts') {
+        if (resourcesData !== null) {
+          document.getElementById('contacts-loading').style.display = 'none';
+          renderContacts();
+        } else {
+          document.getElementById('contacts-loading').style.display = 'block';
+          document.getElementById('contacts-content').innerHTML = '';
+        }
+      } else if (view === 'links') {
+        if (resourcesData !== null) {
+          document.getElementById('links-loading').style.display = 'none';
+          renderLinks();
+        } else {
+          document.getElementById('links-loading').style.display = 'block';
+          document.getElementById('links-content').innerHTML = '';
+        }
+      }
+    }
+
+    function loadResources() {
+      if (resourcesRequested) return;
+      resourcesRequested = true;
+      fetch(SUPABASE_URL + '/rest/v1/resources?select=*', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        resourcesData = data;
+        // re-render whichever sub-view is active
+        var btn = document.querySelector('.res-tab-btn.active');
+        if (btn) switchResView(btn.dataset.resview);
+      })
+      .catch(function() {
+        resourcesData = [];
+        var btn = document.querySelector('.res-tab-btn.active');
+        if (btn) switchResView(btn.dataset.resview);
+      });
+    }
+
+    function renderContacts() {
+      var container = document.getElementById('contacts-content');
+      var contacts = (resourcesData || []).filter(function(r) { return r.type === 'contact'; });
+      if (contacts.length === 0) {
+        container.innerHTML = '<p class="res-empty">No contact information available.</p>';
+        return;
+      }
+      // group by normalized school name
+      var groups = {};
+      contacts.forEach(function(c) {
+        var school = normalizeSchool(c.school) || 'General';
+        if (!groups[school]) groups[school] = [];
+        groups[school].push(c);
+      });
+      var schoolNames = Object.keys(groups).sort(function(a, b) {
+        var ai = SCHOOL_ORDER.indexOf(a), bi = SCHOOL_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+      var html = '';
+      schoolNames.forEach(function(school) {
+        html += '<div class="school-section"><div class="school-header">' + esc(school) + '</div><div class="contact-grid">';
+        groups[school].forEach(function(c) {
+          html += '<div class="contact-card">';
+          html += '<div class="contact-name">' + esc(c.name || '') + '</div>';
+          if (c.role) html += '<div class="contact-role">' + esc(c.role) + '</div>';
+          if (c.link_email) html += '<div class="contact-email"><a href="mailto:' + esc(c.link_email) + '">' + esc(c.link_email) + '</a></div>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+      container.innerHTML = html;
+    }
+
+    function renderLinks() {
+      var container = document.getElementById('links-content');
+      var links = (resourcesData || []).filter(function(r) { return r.type === 'link'; });
+      if (links.length === 0) {
+        container.innerHTML = '<p class="res-empty">No links available.</p>';
+        return;
+      }
+      var html = '<div class="links-grid">';
+      links.forEach(function(l) {
+        html += '<div class="link-card">';
+        html += '<span class="link-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>';
+        if (l.link_email) {
+          html += '<a href="' + esc(l.link_email) + '" target="_blank" rel="noopener noreferrer">' + esc(l.name || l.link_email) + '</a>';
+        } else {
+          html += '<span style="color:var(--card-text);font-family:\'Oswald\',sans-serif;font-size:0.95rem">' + esc(l.name || '') + '</span>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+    // ── end resources ──────────────────────────────────────────────────────────
+
     // opens pop up and uses similar information to card rendering but with headers and stuff
     function openModal(item) {
       modal.classList.toggle('student-led-modal', item.studentLed);
@@ -794,6 +1151,7 @@ For inquiries, please contact anyone in the development team above.
       if (w <= 768) {
         el.textContent =
           '.header-title{font-size:2rem;letter-spacing:3px}.header-title img{height:36px}' +
+          '#theme-toggle{right:10px;padding:5px 6px}#theme-toggle svg{width:20px;height:20px}' +
           'nav{justify-content:space-evenly}' +
           '.tab-btn{flex:1;padding:14px 0;font-size:1.05rem;letter-spacing:1px}' +
           '.tab-icon svg{width:34px;height:34px}' +
@@ -819,7 +1177,10 @@ For inquiries, please contact anyone in the development team above.
           '.modal-text{font-size:1.1rem;line-height:1.8}' +
           '.modal-links a{font-size:1.1rem}' +
           '.modal-student-led-badge{font-size:0.95rem;padding:5px 14px}' +
-          'footer{font-size:0.82rem;line-height:2;padding:20px 24px}';
+          'footer{font-size:0.82rem;line-height:2;padding:20px 24px}' +
+          '#resources-subnav{gap:0}.res-tab-btn{padding:10px 14px;font-size:0.82rem;letter-spacing:1px}' +
+          '.contact-grid{grid-template-columns:1fr}.links-grid{grid-template-columns:1fr}' +
+          '.school-header{font-size:1.05rem}.contact-name{font-size:0.95rem}';
       } else {
         el.textContent = '';
       }
@@ -833,15 +1194,26 @@ For inquiries, please contact anyone in the development team above.
     // The service role key (which bypasses RLS) never appears here and stays in the Supabase dashboard.
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
 
-    fetch(`${SUPABASE_URL}/rest/v1/Activities?Visible=eq.true&select=*`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY
-      }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      console.log(data);
+    // Load activities and filters in parallel; render once both are ready
+    var activitiesPromise = fetch(SUPABASE_URL + '/rest/v1/Activities?Visible=eq.true&select=*', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    }).then(function(res) { return res.json(); });
+
+    var filtersPromise = fetch(SUPABASE_URL + '/rest/v1/filters?select=*&order=sort_order.asc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    }).then(function(res) { return res.json(); }).catch(function() { return []; });
+
+    Promise.all([activitiesPromise, filtersPromise])
+    .then(function(results) {
+      var data        = results[0];
+      var filtersData = results[1];
+
+      // Build dynamic filter functions from DB rows
+      FILTERS = filtersData.map(function(f) {
+        return { key: f.key, label: f.label, test: buildFilterTestFn(f) };
+      });
+      buildFilterChips();
+
       var mapped = data.map(function(row) {
         var links = [];
         if (row['links']) {

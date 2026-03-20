@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Antler Activities — Admin</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Runs before body renders to avoid flash of wrong theme -->
+  <script>if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:          #ea0a2a;
+      --black:        #000000;
+      --white:        #ffffff;
+      --gold:         #f5c518;
+      --bg:           #f0f0f0;
+      --text:         #111111;
+      --card:         #ffffff;
+      --border:       #e0e0e0;
+      --muted:        #888888;
+      --input-bg:     #fafafa;
+      --input-border: #dddddd;
+      --row-hover:    #fff5f6;
+      --danger:       #cc0000;
+      --success:      #1a8a3e;
+      --danger-bg:    #ffeaea;
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0f0f0f;
+      --text:         #e0e0e0;
+      --card:         #1c1c1c;
+      --border:       #2a2a2a;
+      --muted:        #888888;
+      --input-bg:     #222222;
+      --input-border: #383838;
+      --row-hover:    #1e1212;
+      --danger-bg:    #2a0a0a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Open Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* header */
+    header {
+      background: var(--red);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      letter-spacing: 4px;
+      color: var(--black);
+    }
+    .header-badge {
+      background: rgba(0,0,0,0.18);
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    #btn-logout {
+      display: none;
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-logout:hover { background: rgba(0,0,0,0.3); }
+
+    #btn-back {
+      background: rgba(0,0,0,0.15);
+      border: none;
+      color: var(--black);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #btn-back:hover { background: rgba(0,0,0,0.3); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    #theme-toggle {
+      background: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 7px 8px;
+      color: var(--black);
+      transition: background 0.2s;
+      line-height: 0;
+    }
+    #theme-toggle:hover { background: rgba(0,0,0,0.28); }
+    #theme-toggle svg { width: 20px; height: 20px; display: block; }
+
+    /* login page */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .login-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      padding: 48px 44px 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .login-card h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .login-card p {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 32px;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.92rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--red); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    #btn-login {
+      width: 100%;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    #btn-login:hover { background: #c50024; }
+    #btn-login:disabled { background: #aaa; cursor: not-allowed; }
+    #login-error {
+      display: none;
+      margin-top: 14px;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+
+    /* admin page */
+    #admin-screen { display: none; flex: 1; flex-direction: column; }
+
+    #admin-toolbar {
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #admin-search {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 14px 9px 38px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E")
+        no-repeat 10px center;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+    }
+    #admin-search:focus { border-color: var(--red); }
+    #filter-type {
+      padding: 9px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+    }
+    #filter-type:focus { border-color: var(--red); }
+    #btn-add-new {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 9px 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #btn-add-new:hover { background: #c50024; }
+
+    #stats-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      gap: 24px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      letter-spacing: 1px;
+    }
+    .stat strong { color: var(--text); font-weight: 700; }
+
+    #table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    /* loading */
+    #table-loading {
+      text-align: center;
+      padding: 80px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #eee;
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #empty-table {
+      display: none;
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      font-size: 0.88rem;
+    }
+    thead { background: #111; color: var(--white); }
+    th {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 14px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--row-hover); }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .badge-sport    { background: #e8f0ff; color: #1a4aaa; }
+    .badge-club     { background: #f0e8ff; color: #6a1aaa; }
+    .badge-activity { background: #e8fff0; color: #1a7a3e; }
+
+    .toggle-switch { position: relative; width: 38px; height: 22px; display: inline-block; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--success); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-edit, .btn-delete {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-edit   { background: #111; color: #fff; }
+    .btn-delete { background: var(--danger-bg); color: var(--danger); }
+    .btn-edit:hover   { opacity: 0.75; }
+    .btn-delete:hover { opacity: 0.75; }
+
+    /* pop up for adding new activities n stuff */
+    #drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      justify-content: flex-end;
+    }
+    #drawer-overlay.open { display: flex; }
+    #drawer {
+      background: var(--card);
+      width: 100%;
+      max-width: 560px;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    #drawer-header {
+      background: var(--red);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #drawer-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 3px;
+      color: var(--black);
+    }
+    #drawer-close {
+      background: rgba(0,0,0,0.18);
+      border: none;
+      color: var(--black);
+      font-size: 1.2rem;
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    #drawer-close:hover { background: rgba(0,0,0,0.3); }
+    #drawer-body { flex: 1; padding: 24px 24px 8px; overflow-y: auto; }
+
+    .drawer-section-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 6px;
+      margin: 22px 0 14px;
+    }
+    .drawer-section-title:first-child { margin-top: 0; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-row .form-group { margin-bottom: 14px; }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px; height: 18px;
+      cursor: pointer;
+      accent-color: var(--red);
+      flex-shrink: 0;
+    }
+    .checkbox-group label {
+      font-size: 0.88rem;
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .field-hint { font-size: 0.76rem; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+    #drawer-footer {
+      border-top: 2px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      background: var(--card);
+    }
+    #btn-save {
+      flex: 1;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-save:hover { background: #c50024; }
+    #btn-save:disabled { background: #bbb; cursor: not-allowed; }
+    #btn-cancel-drawer {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      padding: 13px 22px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #btn-cancel-drawer:hover { border-color: #aaa; }
+
+    /* confirm delete popup */
+    #confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #confirm-overlay.open { display: flex; }
+    #confirm-box {
+      background: var(--card);
+      border-radius: 14px;
+      border-top: 5px solid var(--danger);
+      padding: 36px 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.2);
+    }
+    #confirm-box h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    #confirm-box p { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    #confirm-box strong { color: var(--text); }
+    .confirm-btns { display: flex; gap: 10px; }
+    #btn-confirm-delete {
+      flex: 1;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-confirm-delete:hover { background: #aa0000; }
+    #btn-confirm-cancel {
+      flex: 1;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    /* notification pop up (called toast bc its like popping out of a toaster, standard practice) */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #111;
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+    }
+    #toast.show  { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 4px solid var(--success); }
+    #toast.error   { border-left: 4px solid var(--danger); }
+
+    @media (max-width: 700px) {
+      #drawer { max-width: 100vw; }
+      .form-row { grid-template-columns: 1fr; }
+      #table-wrap { padding: 12px; }
+      th, td { padding: 10px; }
+      .header-badge { display: none; }
+      #btn-back-text { display: none; }
+      .add-user-row { grid-template-columns: 1fr; }
+    }
+
+    /* super admin nav */
+    #admin-nav {
+      display: none;
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    #admin-nav.visible { display: flex; }
+    .nav-tab {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 14px 20px 11px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -2px;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+    /* different tabs */
+    #view-activities { display: flex; flex: 1; flex-direction: column; }
+    #view-activities.hidden { display: none; }
+    #view-users { display: none; flex: 1; flex-direction: column; }
+    #view-users.active { display: flex; }
+
+    /* user mgmt */
+    #users-toolbar {
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #users-toolbar-label {
+      flex: 1;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+    #btn-add-user {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 9px 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #btn-add-user:hover { background: #c50024; }
+    #users-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+
+    #add-user-card {
+      display: none;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      max-width: 640px;
+    }
+    #add-user-card.open { display: block; }
+    #add-user-card h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    #add-user-card .hint-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .add-user-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .add-user-actions { display: flex; gap: 10px; margin-top: 16px; }
+    #btn-save-user {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 10px 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #btn-save-user:hover { background: #c50024; }
+    #btn-cancel-user {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #btn-cancel-user:hover { border-color: #aaa; }
+    .user-field-hint { font-size: 0.76rem; color: var(--muted); margin-top: 4px; }
+
+    .role-badge-admin       { background: #e8f0ff; color: #1a4aaa; }
+    .role-badge-super_admin { background: #fff3cd; color: #856404; }
+    .role-select {
+      padding: 5px 10px;
+      border: 2px solid var(--input-border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+    }
+    .role-select:focus { border-color: var(--red); }
+    .uuid-cell {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .self-row td { opacity: 0.55; }
+    .self-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+
+    /* change_log for supabase table */
+    #view-changelog { display: none; flex: 1; flex-direction: column; }
+    #view-changelog.active { display: flex; }
+
+    /* filters & resources management views */
+    #view-filters, #view-resources-admin { display: none; flex: 1; flex-direction: column; }
+    #view-filters.active, #view-resources-admin.active { display: flex; }
+    .fr-toolbar { background: var(--card); border-bottom: 2px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .fr-toolbar-label { flex: 1; font-family: 'Oswald', sans-serif; font-size: 0.88rem; letter-spacing: 1px; color: var(--muted); }
+    .fr-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    .btn-fr-add { background: var(--red); color: var(--white); border: none; border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; padding: 9px 20px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .btn-fr-add:hover { background: #c50024; }
+    /* shared side-drawer for filters & resources - mirrors existing #drawer pattern */
+    .fr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; justify-content: flex-end; }
+    .fr-overlay.open { display: flex; }
+    .fr-panel { background: var(--card); width: 100%; max-width: 520px; height: 100vh; overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; animation: slideIn 0.25s ease; }
+    .fr-panel-header { background: var(--red); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .fr-panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 3px; color: var(--black); }
+    .fr-panel-close { background: rgba(0,0,0,0.18); border: none; color: var(--black); font-size: 1.2rem; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .fr-panel-close:hover { background: rgba(0,0,0,0.3); }
+    .fr-panel-body { flex: 1; padding: 24px 24px 8px; overflow-y: auto; }
+    .fr-panel-footer { border-top: 2px solid var(--border); padding: 16px 24px; display: flex; gap: 10px; flex-shrink: 0; background: var(--card); }
+    .fr-save-btn { flex: 1; background: var(--red); color: var(--white); border: none; border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 2px; padding: 13px; cursor: pointer; transition: background 0.2s; }
+    .fr-save-btn:hover { background: #c50024; }
+    .fr-save-btn:disabled { background: #bbb; cursor: not-allowed; }
+    .fr-cancel-btn { background: var(--bg); border: 2px solid var(--border); color: var(--text); border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; padding: 13px 22px; cursor: pointer; transition: border-color 0.2s; }
+    .fr-cancel-btn:hover { border-color: #aaa; }
+    .badge-link    { background: #e8f8ff; color: #0066aa; }
+    .badge-contact { background: #f0e8ff; color: #6a1aaa; }
+    #changelog-toolbar {
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+    }
+    #changelog-toolbar-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+    #changelog-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    .badge-created { background: #e8fff0; color: #1a7a3e; }
+    .badge-updated { background: #e8f0ff; color: #1a4aaa; }
+    .badge-deleted { background: var(--danger-bg); color: var(--danger); }
+    .changes-summary { font-size: 0.8rem; color: var(--muted); white-space: normal; line-height: 1.4; max-width: 280px; }
+  </style>
+</head>
+<body>
+
+<!-- header -->
+<header>
+  <div class="header-left">
+    <a href="index.html" id="btn-back" title="Back to main site">&#8592;<span id="btn-back-text"> Back</span></a>
+    <img src="https://raw.githubusercontent.com/will-k16/antler-activities/main/black-antler-logo.png" alt="Antler" style="height:40px;width:auto;" />
+    <span class="header-title">Antler Activities</span>
+    <span class="header-badge">Admin</span>
+  </div>
+  <div class="header-right">
+    <button id="theme-toggle" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
+      <!-- moon icon (seen in light, click to switch to dark) -->
+      <svg id="admin-theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <!-- sun icon (seen in dark, click to switch to light) -->
+      <svg id="admin-theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+    </button>
+    <button id="btn-logout">Sign Out</button>
+  </div>
+</header>
+
+<!-- login screen -->
+<div id="login-screen">
+  <div class="login-card">
+    <h2>Admin Sign In</h2>
+    <p>Sign in with your authorized admin account to manage activities.</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button id="btn-login">SIGN IN</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- admin page -->
+<div id="admin-screen">
+
+  <!-- super_admin nav -->
+  <div id="admin-nav">
+    <button class="nav-tab active" data-view="activities">Activities</button>
+    <button class="nav-tab"        data-view="filters">Filters</button>
+    <button class="nav-tab"        data-view="resources-admin">Resources</button>
+    <button class="nav-tab"        data-view="users">User Management</button>
+    <button class="nav-tab"        data-view="changelog">Change Log</button>
+  </div>
+
+  <!-- activities view -->
+  <div id="view-activities">
+    <div id="admin-toolbar">
+      <input type="text" id="admin-search" placeholder="Search by name, coach, or keyword…" />
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="Sport">Athletics</option>
+        <option value="Club">Club</option>
+        <option value="Activity">Activity</option>
+      </select>
+      <button id="btn-add-new">＋ Add New</button>
+    </div>
+    <div id="stats-bar">
+      <span class="stat">Total: <strong id="stat-total">—</strong></span>
+      <span class="stat">Visible: <strong id="stat-visible">—</strong></span>
+      <span class="stat">Hidden: <strong id="stat-hidden">—</strong></span>
+    </div>
+    <div id="table-wrap">
+      <div id="table-loading"><div class="spinner"></div>Loading…</div>
+      <div id="empty-table">No entries found.</div>
+      <table id="activities-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Coach / Sponsor</th>
+            <th>Meeting Times</th>
+            <th>Visible</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- filters management -->
+  <div id="view-filters">
+    <div class="fr-toolbar">
+      <span class="fr-toolbar-label">Manage filter chips shown on the public activities page</span>
+      <button id="btn-add-filter" class="btn-fr-add">＋ Add Filter</button>
+    </div>
+    <div class="fr-table-wrap">
+      <div id="filters-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="filters-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No filters yet. Add one to get started.</div>
+      <table id="filters-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Key</th>
+            <th>Requires Type</th>
+            <th>Field</th>
+            <th>Pattern</th>
+            <th>Negate</th>
+            <th>Order</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="filters-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- resources management -->
+  <div id="view-resources-admin">
+    <div class="fr-toolbar">
+      <span class="fr-toolbar-label">Manage contacts and links shown on the public Resources page</span>
+      <button id="btn-add-resource" class="btn-fr-add">＋ Add Entry</button>
+    </div>
+    <div class="fr-table-wrap">
+      <div id="resources-admin-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="resources-admin-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No entries yet.</div>
+      <table id="resources-admin-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Link / Email</th>
+            <th>School</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="resources-admin-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- changelog page -->
+  <div id="view-changelog">
+    <div id="changelog-toolbar">
+      <span id="changelog-toolbar-label">Record of all activity changes made by admins</span>
+    </div>
+    <div id="changelog-table-wrap">
+      <div id="changelog-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="changelog-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No changes logged yet.</div>
+      <table id="changelog-table" style="display:none">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Who</th>
+            <th>Action</th>
+            <th>Activity</th>
+            <th>What Changed</th>
+          </tr>
+        </thead>
+        <tbody id="changelog-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- user mgmt -->
+  <div id="view-users">
+    <div id="users-toolbar">
+      <span id="users-toolbar-label">Manage who can access the admin panel</span>
+      <button id="btn-add-user">＋ Add User</button>
+    </div>
+    <div id="users-table-wrap">
+
+      <!-- add user form popup -->
+      <div id="add-user-card">
+        <h3>Add Admin User</h3>
+        <p class="hint-text">
+          First create the user in your <strong>Supabase dashboard → Authentication → Users → Add user</strong>,
+          then paste their User ID here to grant them access.
+        </p>
+        <div class="add-user-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="new-user-name" placeholder="e.g. Jane Smith" />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="new-user-role">
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px">
+          <label>User ID (UUID)</label>
+          <input type="text" id="new-user-uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+          <div class="user-field-hint">Found in Supabase → Authentication → Users → click the user → copy the UUID</div>
+        </div>
+        <div class="add-user-actions">
+          <button id="btn-save-user">ADD USER</button>
+          <button id="btn-cancel-user">Cancel</button>
+        </div>
+      </div>
+
+      <div id="users-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="users-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No admin users found.</div>
+      <table id="users-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>User ID</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- new activity drawer/pop up -->
+<div id="drawer-overlay">
+  <div id="drawer">
+    <div id="drawer-header">
+      <span id="drawer-title">Add New Activity</span>
+      <button id="drawer-close">✕</button>
+    </div>
+    <div id="drawer-body">
+      <div class="drawer-section-title">Basic Info</div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="f-name" placeholder="e.g. Drama Club" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="f-type">
+            <option value="">— Select —</option>
+            <option value="Sport">Sport (Athletics)</option>
+            <option value="Club">Club</option>
+            <option value="Activity">Activity</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time of Year</label>
+          <input type="text" id="f-timeofyear" placeholder="e.g. Fall, Year-Round" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Meeting Times</label>
+        <input type="text" id="f-meetingtimes" placeholder="e.g. After school, Mon &amp; Wed" />
+      </div>
+
+      <div class="drawer-section-title">Coach / Sponsor 1</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="f-coach1name" placeholder="First Last" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-coach1email" placeholder="coach@school.edu" />
+        </div>
+      </div>
+
+      <div class="drawer-section-title">Coach / Sponsor 2 <span style="font-weight:400;opacity:0.6;font-size:0.7rem">(optional)</span></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="f-coach2name" placeholder="First Last" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-coach2email" placeholder="coach@school.edu" />
+        </div>
+      </div>
+
+      <div class="drawer-section-title">Description</div>
+      <div class="form-group">
+        <label>Overview</label>
+        <textarea id="f-overview" placeholder="Brief description shown on cards…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Mission Statement</label>
+        <textarea id="f-mission" placeholder="Club's mission statement…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Qualifications / Needs</label>
+        <textarea id="f-qualifications" placeholder="What students need to join…"></textarea>
+      </div>
+
+      <div class="drawer-section-title">Links <span style="font-weight:400;opacity:0.6;font-size:0.7rem">(optional)</span></div>
+      <div class="form-group">
+        <label>Links</label>
+        <textarea id="f-links" placeholder="Title, https://url.com, Title 2, https://url2.com"></textarea>
+        <div class="field-hint">Enter pairs separated by commas: <em>Title, URL, Title 2, URL 2</em></div>
+      </div>
+
+      <div class="drawer-section-title">Settings</div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="f-visible" />
+        <label for="f-visible">Visible to students on the public site</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="f-studentled" />
+        <label for="f-studentled">Student-Led (shows gold border &amp; badge)</label>
+      </div>
+    </div>
+    <div id="drawer-footer">
+      <button id="btn-cancel-drawer">Cancel</button>
+      <button id="btn-save">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- delete confirmation -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <h3>Delete Activity?</h3>
+    <p>You are about to permanently delete <strong id="confirm-name"></strong>. This cannot be undone.</p>
+    <div class="confirm-btns">
+      <button id="btn-confirm-cancel">Cancel</button>
+      <button id="btn-confirm-delete">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- filter add/edit drawer -->
+<div id="flt-drawer-overlay" class="fr-overlay">
+  <div class="fr-panel">
+    <div class="fr-panel-header">
+      <span id="flt-drawer-title" class="fr-panel-title">Add Filter</span>
+      <button class="fr-panel-close" id="flt-drawer-close">✕</button>
+    </div>
+    <div class="fr-panel-body">
+      <div class="drawer-section-title">Display</div>
+      <div class="form-group">
+        <label>Label <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="ff-label" placeholder="e.g. Fall Sport — text shown on the filter chip" />
+      </div>
+      <div class="form-group">
+        <label>Key <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="ff-key" placeholder="e.g. fall-sport — unique slug, lowercase, hyphens only" />
+        <div class="field-hint">Must be unique. Used internally to track which filters are active. No spaces — use hyphens.</div>
+      </div>
+      <div class="form-group">
+        <label>Sort Order</label>
+        <input type="number" id="ff-order" placeholder="0" min="0" />
+        <div class="field-hint">Controls where this chip appears in the filter bar. Lower numbers appear first.</div>
+      </div>
+      <div class="drawer-section-title">Match Rules</div>
+      <div class="form-group">
+        <label>Requires Type</label>
+        <select id="ff-require-type">
+          <option value="">— Any type (applies to all activities) —</option>
+          <option value="Sport">Sport only</option>
+          <option value="Club">Club only</option>
+          <option value="Activity">Activity only</option>
+        </select>
+        <div class="field-hint">If set, this filter only appears and only matches activities of this specific type. Example: "Fall Sport" should require type "Sport".</div>
+      </div>
+      <div class="form-group">
+        <label>Field to Check</label>
+        <select id="ff-field">
+          <option value="">— No field check (match by type only) —</option>
+          <option value="timeOfYear">Time of Year — checks the activity's "Time of Year" field (e.g. Fall, Spring)</option>
+          <option value="meetingTimes">Meeting Times — checks the "Meeting Times" field (e.g. After school, Lunch)</option>
+          <option value="nameOverview">Name + Overview — keyword search across the activity name and overview text</option>
+          <option value="studentLed">Student-Led — matches activities marked as student-led (no pattern needed)</option>
+        </select>
+        <div class="field-hint">Which part of the activity to run the pattern against. Leave blank to only filter by the type above.</div>
+      </div>
+      <div class="form-group">
+        <label>Pattern</label>
+        <input type="text" id="ff-pattern" placeholder="e.g. fall  or  after school  or  tech|computer|stem" />
+        <div class="field-hint">Regular expression matched against the selected field (case-insensitive). Use <strong>|</strong> to match multiple terms — e.g. <em>fall|autumn</em>. Leave blank for the Student-Led field or type-only filters.</div>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="ff-negate" />
+        <label for="ff-negate">Negate — activity must <strong>NOT</strong> match the pattern</label>
+      </div>
+      <div class="field-hint" style="margin-top:4px">Use this for exclusion filters. Example: "Boys Sport" = type Sport + field Name+Overview + pattern "girls" + Negate checked, so it matches sports that do <em>not</em> mention "girls".</div>
+    </div>
+    <div class="fr-panel-footer">
+      <button class="fr-cancel-btn" id="btn-cancel-flt-drawer">Cancel</button>
+      <button class="fr-save-btn" id="btn-save-filter">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- resource add/edit drawer -->
+<div id="res-drawer-overlay" class="fr-overlay">
+  <div class="fr-panel">
+    <div class="fr-panel-header">
+      <span id="res-drawer-title" class="fr-panel-title">Add Resource</span>
+      <button class="fr-panel-close" id="res-drawer-close">✕</button>
+    </div>
+    <div class="fr-panel-body">
+      <div class="form-group">
+        <label>Type <span style="color:var(--danger)">*</span></label>
+        <select id="fr-type">
+          <option value="">— Select —</option>
+          <option value="contact">Contact — a person with name, role, email, and school</option>
+          <option value="link">Link — a URL displayed as a clickable card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fr-name" placeholder="Person's full name, or the text to display for the link" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" id="fr-role" placeholder="e.g. Activities Director, Athletic Trainer — leave blank for links" />
+        <div class="field-hint">The person's title or role. Leave blank for links.</div>
+      </div>
+      <div class="form-group">
+        <label>Link / Email <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fr-link-email" placeholder="someone@epsne.org  or  https://example.com" />
+        <div class="field-hint">Email address for contacts. Full URL starting with https:// for links.</div>
+      </div>
+      <div class="form-group">
+        <label>School</label>
+        <input type="text" id="fr-school" placeholder="e.g. Elkhorn High School, EHS, ENHS — leave blank for links" />
+        <div class="field-hint">Groups this contact under a school header. EHS and Elkhorn High School are treated as the same school. Leave blank for links.</div>
+      </div>
+    </div>
+    <div class="fr-panel-footer">
+      <button class="fr-cancel-btn" id="btn-cancel-res-drawer">Cancel</button>
+      <button class="fr-save-btn" id="btn-save-resource">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast (notification) -->
+<div id="toast"></div>
+
+<script>
+
+  // switch theme
+  (function() {
+    function updateThemeIcon() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('admin-theme-icon-moon').style.display = isDark ? 'none'  : 'block';
+      document.getElementById('admin-theme-icon-sun').style.display  = isDark ? 'block' : 'none';
+    }
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      updateThemeIcon();
+    });
+    updateThemeIcon();
+  })();
+  // supabase info
+  // key can be kept public since rls enforces permissions and the key is anon
+  const SUPABASE_URL = 'https://paquacgjnqtzuhojwlvw.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // btw pk = primary key, basically the primary id for each row in a supabase table
+  let allRows        = [];
+  let editingId      = null;   // pk value of row being edited (null = adding new)
+  let deleteId       = null;   // pk value of row pending deletion
+  let saveInProgress = false;
+  let PK_COL         = 'Name'; // Activities table uses Name as primary key - names must be unique
+  let currentUserRole = null;  // 'admin' or 'super_admin', set on login
+  let currentUserId   = null;  // uuid of the signed-in user (used to flag self in user table)
+  let currentUserName = null;  // display name of the signed-in user (used for change log)
+
+  function detectPK(row) { /* since pk_col is set to Name automatically nothing needed */ }
+
+  // elements
+  const loginScreen    = document.getElementById('login-screen');
+  const adminScreen    = document.getElementById('admin-screen');
+  const btnLogout      = document.getElementById('btn-logout');
+  const btnLogin       = document.getElementById('btn-login');
+  const loginEmail     = document.getElementById('login-email');
+  const loginPw        = document.getElementById('login-password');
+  const loginError     = document.getElementById('login-error');
+  const adminSearch    = document.getElementById('admin-search');
+  const filterType     = document.getElementById('filter-type');
+  const tableBody      = document.getElementById('table-body');
+  const tableEl        = document.getElementById('activities-table');
+  const tableLoading   = document.getElementById('table-loading');
+  const emptyTable     = document.getElementById('empty-table');
+  const drawerOverlay  = document.getElementById('drawer-overlay');
+  const drawerTitle    = document.getElementById('drawer-title');
+  const btnSave        = document.getElementById('btn-save');
+  const confirmOverlay = document.getElementById('confirm-overlay');
+  const confirmName    = document.getElementById('confirm-name');
+
+  // timeout so that ui is never infinitely stalled and stuck
+  function withTimeout(promise, ms, timeoutMsg) {
+    const timer = new Promise(resolve =>
+      setTimeout(() => resolve({ data: null, error: { message: timeoutMsg } }), ms)
+    );
+    return Promise.race([promise, timer]);
+  }
+
+  // returns 'admin', 'super_admin', or null if the user has no role / error
+  // mostly for console debugging
+  async function getUserRole(userId) {
+    console.log('[Antler Auth] Checking role for user_id:', userId);
+    const { data, error } = await withTimeout(
+      sb.from('user_roles').select('role, name').eq('user_id', userId).single(),
+      8000,
+      'Permission check timed out — please try again.'
+    );
+    console.log('[Antler Auth] user_roles query result — data:', data, '| error:', error);
+    if (error || !data) {
+      console.error('[Antler Auth] ❌ Role check failed. Cause:', error?.message || 'data was null/undefined');
+      return null;
+    }
+    currentUserName = data.name || null;
+    console.log('[Antler Auth] ✅ Role found:', data.role);
+    return data.role; // 'admin' or 'super_admin'
+  }
+
+  function showLoginScreen(errorMsg) {
+    loginScreen.style.display = 'flex';
+    adminScreen.style.display = 'none';
+    btnLogout.style.display   = 'none';
+    btnLogin.textContent      = 'SIGN IN';
+    btnLogin.disabled         = false;
+    // reset nav / views for next login
+    document.getElementById('admin-nav').classList.remove('visible');
+    document.querySelectorAll('.nav-tab').forEach(t => { t.classList.toggle('active', t.dataset.view === 'activities'); });
+    document.getElementById('view-activities').classList.remove('hidden');
+    document.getElementById('view-filters').classList.remove('active');
+    document.getElementById('view-resources-admin').classList.remove('active');
+    document.getElementById('view-users').classList.remove('active');
+    document.getElementById('view-changelog').classList.remove('active');
+    currentUserRole = null;
+    currentUserId   = null;
+    currentUserName = null;
+    if (errorMsg) showLoginError(errorMsg);
+  }
+
+  function showAdminScreen(role) {
+    currentUserRole = role;
+    loginError.style.display  = 'none';
+    loginScreen.style.display = 'none';
+    adminScreen.style.display = 'flex';
+    btnLogout.style.display   = 'block';
+    // show the tab nav for all admins; hide User mgmt tab for non-super_admins
+    document.getElementById('admin-nav').classList.add('visible');
+    document.querySelector('.nav-tab[data-view="users"]').style.display = role === 'super_admin' ? '' : 'none';
+  }
+
+  // doLogin() handles the SIGNED_IN path itself, so we only watch for
+  // INITIAL_SESSION (existing session from a previous visit) and SIGNED_OUT.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'INITIAL_SESSION' && session) {
+      // means that user already had a valid session, so now checks if they still have a role or if it was removed
+      const role = await getUserRole(session.user.id).catch(() => null);
+      if (role === 'admin' || role === 'super_admin') {
+        currentUserId = session.user.id;
+        showAdminScreen(role);
+        loadData();
+      } else {
+        await sb.auth.signOut().catch(() => {});
+      }
+    } else if (event === 'SIGNED_OUT') {
+      showLoginScreen();
+    }
+  });
+
+  // login
+  btnLogin.addEventListener('click', doLogin);
+  loginPw.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const email = loginEmail.value.trim();
+    const pw    = loginPw.value;
+    if (!email || !pw) { showLoginError('Please enter both email and password.'); return; }
+
+    btnLogin.textContent     = 'Signing in…';
+    btnLogin.disabled        = true;
+    loginError.style.display = 'none';
+
+    try {
+      // 10s timeout for login to prevent loading errors
+      const { data: authData, error: authError } = await withTimeout(
+        sb.auth.signInWithPassword({ email, password: pw }),
+        10000,
+        'Connection timed out. Please check your internet and try again.'
+      );
+
+      if (authError) {
+        const msg = (authError.message || '').toLowerCase();
+        showLoginError(
+          msg.includes('invalid') || msg.includes('credentials') || msg.includes('email') || msg.includes('password')
+            ? 'Incorrect email or password. Please try again.'
+            : authError.message
+        );
+        return;
+      }
+
+      // check role
+      const role = await getUserRole(authData.user.id).catch(() => null);
+      if (role !== 'admin' && role !== 'super_admin') {
+        await sb.auth.signOut().catch(() => {});
+        showLoginError('Access denied — your account does not have admin permissions.');
+        return;
+      }
+
+      // let user access it
+      currentUserId = authData.user.id;
+      showAdminScreen(role);
+      loadData();
+
+    } catch (e) {
+      showLoginError('Unexpected error: ' + (e.message || 'Please try again.'));
+    } finally {
+      // re-enable sign in button in case of error
+      btnLogin.textContent = 'SIGN IN';
+      btnLogin.disabled    = false;
+    }
+  }
+
+  function showLoginError(msg) {
+    loginError.textContent   = msg;
+    loginError.style.display = 'block';
+  }
+
+  btnLogout.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    showToast('Signed out successfully.', 'success');
+  });
+
+  // show everything (load data)
+  async function loadData() {
+    tableLoading.style.display = 'block';
+    tableEl.style.display      = 'none';
+    emptyTable.style.display   = 'none';
+
+    const { data, error } = await sb
+      .from('Activities')
+      .select('*')
+      .order('Name', { ascending: true });
+
+    tableLoading.style.display = 'none';
+
+    if (error) {
+      showToast('Failed to load data: ' + error.message, 'error');
+      return;
+    }
+    allRows = data || [];
+    if (allRows.length > 0) {
+      detectPK(allRows[0]);
+      // purely testing purposes and debugging - open console to see this stuff
+      console.log('[Antler Admin] Columns returned by Supabase:', Object.keys(allRows[0]));
+      console.log('[Antler Admin] All values in first row:', allRows[0]);
+      console.log('[Antler Admin] Primary key column selected:', `"${PK_COL}"`);
+      console.log('[Antler Admin] Sample PK value:', allRows[0][PK_COL]);
+      if (allRows[0][PK_COL] == null) {
+        console.error('[Antler Admin] ❌ PK value is null — edit/delete/visibility will fail until this is resolved.');
+        showToast('⚠️ Check browser console (F12) — primary key issue detected.', 'error');
+      }
+    }
+    renderTable();
+  }
+
+  // creates table
+  function renderTable() {
+    const q    = adminSearch.value.trim().toLowerCase();
+    const type = filterType.value;
+
+    const rows = allRows.filter(r => {
+      const matchType   = !type || r['Type'] === type;
+      const matchSearch = !q ||
+        (r['Name']                   || '').toLowerCase().includes(q) ||
+        (r['Coach/Sponsor Name - 1'] || '').toLowerCase().includes(q) ||
+        (r['Coach/Sponsor Name - 2'] || '').toLowerCase().includes(q) ||
+        (r['Overview']               || '').toLowerCase().includes(q) ||
+        (r['Meeting Times']          || '').toLowerCase().includes(q);
+      return matchType && matchSearch;
+    });
+
+    document.getElementById('stat-total').textContent   = allRows.length;
+    document.getElementById('stat-visible').textContent = allRows.filter(r => r['Visible']).length;
+    document.getElementById('stat-hidden').textContent  = allRows.filter(r => !r['Visible']).length;
+
+    if (rows.length === 0) {
+      tableEl.style.display    = 'none';
+      emptyTable.style.display = 'block';
+      return;
+    }
+    emptyTable.style.display = 'none';
+    tableEl.style.display    = 'table';
+    tableBody.innerHTML      = '';
+
+    rows.forEach(row => {
+      const tr      = document.createElement('tr');
+      const pkVal   = String(row[PK_COL] ?? '');   // raw pk value as string
+      const typeLow = (row['Type'] || '').toLowerCase();
+      const badgeCls = typeLow === 'sport' ? 'badge-sport' : typeLow === 'club' ? 'badge-club' : 'badge-activity';
+      const coaches  = [row['Coach/Sponsor Name - 1'], row['Coach/Sponsor Name - 2']].filter(Boolean).join(', ') || '—';
+
+      tr.innerHTML = `
+        <td style="font-weight:600" title="${esc(row['Name'] || '')}">${esc(row['Name'] || '—')}</td>
+        <td><span class="badge ${badgeCls}">${esc(row['Type'] || '—')}</span></td>
+        <td title="${esc(coaches)}">${esc(coaches)}</td>
+        <td title="${esc(row['Meeting Times'] || '')}">${esc(row['Meeting Times'] || '—')}</td>
+        <td>
+          <label class="toggle-switch">
+            <input type="checkbox" class="vis-toggle" data-id="${esc(pkVal)}" ${row['Visible'] ? 'checked' : ''} />
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit"   data-id="${esc(pkVal)}">Edit</button>
+            <button class="btn-delete" data-id="${esc(pkVal)}" data-name="${esc(row['Name'] || '')}">Delete</button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    // visibility toggles
+    tableBody.querySelectorAll('.vis-toggle').forEach(cb => {
+      cb.addEventListener('change', async e => {
+        const id      = e.target.dataset.id;   // raw string pk value
+        const visible = e.target.checked;
+        const { error } = await sb
+          .from('Activities')
+          .update({ 'Visible': visible })
+          .eq(PK_COL, id);
+        if (error) {
+          showToast('Failed to update visibility: ' + error.message, 'error');
+          e.target.checked = !visible;
+        } else {
+          const row = allRows.find(r => String(r[PK_COL]) === id);
+          if (row) row['Visible'] = visible;
+          document.getElementById('stat-visible').textContent = allRows.filter(r => r['Visible']).length;
+          document.getElementById('stat-hidden').textContent  = allRows.filter(r => !r['Visible']).length;
+          logChange('updated', row ? row['Name'] : id, { old: { 'Visible': !visible }, new: { 'Visible': visible } });
+          showToast('Visibility updated.', 'success');
+        }
+      });
+    });
+
+    // edit buttons
+    tableBody.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', () => openDrawer(btn.dataset.id));   // raw string pk
+    });
+
+    // delete buttons
+    tableBody.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteId = btn.dataset.id;   // raw string pk
+        confirmName.textContent = btn.dataset.name;
+        confirmOverlay.classList.add('open');
+      });
+    });
+  }
+
+  adminSearch.addEventListener('input', renderTable);
+  filterType.addEventListener('change', renderTable);
+
+  // drawer/pop up
+  function openDrawer(id) {
+    // id is a raw string pk value, or null/undefined for new
+    editingId = (id != null && id !== '') ? id : null;
+
+    // clears all of the fields before opening
+    document.getElementById('f-name').value           = '';
+    document.getElementById('f-type').value           = '';
+    document.getElementById('f-coach1name').value     = '';
+    document.getElementById('f-coach1email').value    = '';
+    document.getElementById('f-coach2name').value     = '';
+    document.getElementById('f-coach2email').value    = '';
+    document.getElementById('f-overview').value       = '';
+    document.getElementById('f-mission').value        = '';
+    document.getElementById('f-qualifications').value = '';
+    document.getElementById('f-timeofyear').value     = '';
+    document.getElementById('f-meetingtimes').value   = '';
+    document.getElementById('f-links').value          = '';
+    document.getElementById('f-visible').checked      = true;
+    document.getElementById('f-studentled').checked   = false;
+    drawerTitle.textContent = 'Add New Activity';
+
+    // for editing, so that already filled in fields will default fill in to drawer
+    if (editingId) {
+      const row = allRows.find(r => String(r[PK_COL]) === String(editingId));
+      if (row) {
+        drawerTitle.textContent = 'Editing: ' + (row['Name'] || 'Activity');
+        document.getElementById('f-name').value           = row['Name']                    || '';
+        document.getElementById('f-type').value           = row['Type']                    || '';
+        document.getElementById('f-coach1name').value     = row['Coach/Sponsor Name - 1']  || '';
+        document.getElementById('f-coach1email').value    = row['Coach/Sponsor Email - 1'] || '';
+        document.getElementById('f-coach2name').value     = row['Coach/Sponsor Name - 2']  || '';
+        document.getElementById('f-coach2email').value    = row['Coach/Sponsor Email - 2'] || '';
+        document.getElementById('f-overview').value       = row['Overview']                || '';
+        document.getElementById('f-mission').value        = row['Mission Statement']       || '';
+        document.getElementById('f-qualifications').value = row['Qualifications/Needs']    || '';
+        document.getElementById('f-timeofyear').value     = row['Time of Year']            || '';
+        document.getElementById('f-meetingtimes').value   = row['Meeting Times']           || '';
+        document.getElementById('f-links').value          = row['links']                   || '';
+        document.getElementById('f-visible').checked      = !!row['Visible'];
+        document.getElementById('f-studentled').checked   = !!row['Student-Led'];
+      }
+    }
+
+    // reset save button
+    btnSave.textContent = 'SAVE';
+    btnSave.disabled    = false;
+    saveInProgress      = false;
+
+    drawerOverlay.classList.add('open');
+    document.getElementById('f-name').focus();
+  }
+
+  function closeDrawer() {
+    drawerOverlay.classList.remove('open');
+    editingId      = null;
+    saveInProgress = false;
+    btnSave.textContent = 'SAVE';
+    btnSave.disabled    = false;
+  }
+
+  document.getElementById('btn-add-new').addEventListener('click',     () => openDrawer(null));
+  document.getElementById('drawer-close').addEventListener('click',    closeDrawer);
+  document.getElementById('btn-cancel-drawer').addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', e => { if (e.target === drawerOverlay) closeDrawer(); });
+
+  // save
+  btnSave.addEventListener('click', async () => {
+    if (saveInProgress) return;
+
+    saveInProgress      = true;
+    btnSave.disabled    = true;
+    btnSave.textContent = 'Saving…';
+
+    const payload = {
+      'Name':                    document.getElementById('f-name').value.trim()         || null,
+      'Type':                    document.getElementById('f-type').value                || null,
+      'Coach/Sponsor Name - 1':  document.getElementById('f-coach1name').value.trim()  || null,
+      'Coach/Sponsor Email - 1': document.getElementById('f-coach1email').value.trim() || null,
+      'Coach/Sponsor Name - 2':  document.getElementById('f-coach2name').value.trim()  || null,
+      'Coach/Sponsor Email - 2': document.getElementById('f-coach2email').value.trim() || null,
+      'Overview':                document.getElementById('f-overview').value.trim()      || null,
+      'Mission Statement':       document.getElementById('f-mission').value.trim()       || null,
+      'Qualifications/Needs':    document.getElementById('f-qualifications').value.trim()|| null,
+      'Time of Year':            document.getElementById('f-timeofyear').value.trim()    || null,
+      'Meeting Times':           document.getElementById('f-meetingtimes').value.trim()  || null,
+      'links':                   document.getElementById('f-links').value.trim()         || null,
+      'Visible':                 document.getElementById('f-visible').checked,
+      'Student-Led':             document.getElementById('f-studentled').checked,
+    };
+
+    // saving old values for change_log
+    const oldRow = editingId ? allRows.find(r => String(r[PK_COL]) === String(editingId)) : null;
+
+    let error;
+    try {
+      if (editingId) {
+        ({ error } = await sb.from('Activities').update(payload).eq(PK_COL, editingId));
+      } else {
+        ({ error } = await sb.from('Activities').insert(payload));
+      }
+    } catch (e) {
+      error = { message: e.message || 'Unknown error' };
+    }
+
+    saveInProgress      = false;
+    btnSave.disabled    = false;
+    btnSave.textContent = 'SAVE';
+
+    if (error) {
+      showToast('Error saving: ' + error.message, 'error');
+    } else {
+      if (editingId && oldRow) {
+        // only gets fields that changed (also for change_log)
+        const changesOld = {}, changesNew = {};
+        for (const key of Object.keys(payload)) {
+          if (String(payload[key] ?? '') !== String(oldRow[key] ?? '')) {
+            changesOld[key] = oldRow[key];
+            changesNew[key] = payload[key];
+          }
+        }
+        if (Object.keys(changesOld).length > 0)
+          logChange('updated', payload['Name'] || oldRow['Name'], { old: changesOld, new: changesNew });
+      } else if (!editingId) {
+        logChange('created', payload['Name'], { new: payload });
+      }
+      showToast(editingId ? 'Activity updated!' : 'Activity added!', 'success');
+      closeDrawer();
+      await loadData();
+    }
+  });
+
+  // delete
+  document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+    if (deleteId == null || deleteId === '') return;
+    const deletedRow = allRows.find(r => String(r[PK_COL]) === String(deleteId));
+    const { error } = await sb.from('Activities').delete().eq(PK_COL, deleteId);
+    confirmOverlay.classList.remove('open');
+    if (error) {
+      showToast('Failed to delete: ' + error.message, 'error');
+    } else {
+      showToast('Activity deleted.', 'success');
+      if (deletedRow) logChange('deleted', deletedRow['Name'], { old: deletedRow });
+      deleteId = null;
+      await loadData();
+    }
+  });
+  document.getElementById('btn-confirm-cancel').addEventListener('click', () => {
+    confirmOverlay.classList.remove('open');
+    deleteId = null;
+  });
+
+  // toast noti
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = (type === 'success' ? '✓  ' : '✕  ') + msg;
+    toast.className   = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.className = ''; }, 3400);
+  }
+
+  // change_log
+  // logs a change to the change_log table without blocking the UI.
+  // action: either created, updatated, or deleted
+  // activityName: self explanatory
+  // changes:      { old: {...}, new: {...} } - uses jsonb to store before and after values
+  function logChange(action, activityName, changes) {
+    sb.from('change_log').insert({
+      user_id:    currentUserId,
+      name:       currentUserName || 'Unknown',
+      action:     action,
+      activity:   activityName || '(unknown)',
+      changes:    changes,
+    }).then(({ error }) => {
+      if (error) console.warn('[Antler Admin] Change log insert failed:', error.message);
+    });
+  }
+
+  // correct code for escaping html special characters
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // nav tab switching
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const view = tab.dataset.view;
+      // activities uses .hidden, all others use .active
+      document.getElementById('view-activities').classList.toggle('hidden', view !== 'activities');
+      document.getElementById('view-filters').classList.toggle('active',          view === 'filters');
+      document.getElementById('view-resources-admin').classList.toggle('active',  view === 'resources-admin');
+      document.getElementById('view-users').classList.toggle('active',            view === 'users');
+      document.getElementById('view-changelog').classList.toggle('active',        view === 'changelog');
+      if      (view === 'users')            loadUsers();
+      else if (view === 'changelog')        loadChangelog();
+      else if (view === 'filters')          loadFilters();
+      else if (view === 'resources-admin')  loadResourcesAdmin();
+    });
+  });
+
+  // user mgmt
+  let allUsers = [];
+
+  async function loadUsers() {
+    const usersLoading = document.getElementById('users-loading');
+    const usersTable   = document.getElementById('users-table');
+    const usersEmpty   = document.getElementById('users-empty');
+    usersLoading.style.display = 'block';
+    usersTable.style.display   = 'none';
+    usersEmpty.style.display   = 'none';
+
+    const { data, error } = await sb
+      .from('user_roles')
+      .select('*')
+      .order('name', { ascending: true });
+
+    usersLoading.style.display = 'none';
+
+    if (error) {
+      showToast('Failed to load users: ' + error.message, 'error');
+      return;
+    }
+    allUsers = data || [];
+    renderUsers();
+  }
+
+  function renderUsers() {
+    const tbody      = document.getElementById('users-body');
+    const usersTable = document.getElementById('users-table');
+    const usersEmpty = document.getElementById('users-empty');
+    tbody.innerHTML  = '';
+
+    if (allUsers.length === 0) {
+      usersTable.style.display = 'none';
+      usersEmpty.style.display = 'block';
+      return;
+    }
+    usersEmpty.style.display  = 'none';
+    usersTable.style.display  = 'table';
+
+    allUsers.forEach(user => {
+      const isSelf = (user.user_id || '') === currentUserId;
+      const tr = document.createElement('tr');
+      if (isSelf) tr.classList.add('self-row');
+
+      tr.innerHTML = `
+        <td style="font-weight:600">
+          ${esc(user.name || '—')}
+          ${isSelf ? '<span class="self-label">(you)</span>' : ''}
+        </td>
+        <td class="uuid-cell" title="${esc(user.user_id || '')}">${esc(user.user_id || '—')}</td>
+        <td>
+          <select class="role-select" data-uid="${esc(user.user_id || '')}" ${isSelf ? 'disabled title="Cannot change your own role"' : ''}>
+            <option value="admin"       ${user.role === 'admin'       ? 'selected' : ''}>Admin</option>
+            <option value="super_admin" ${user.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+          </select>
+        </td>
+        <td>
+          ${isSelf
+            ? '<span style="font-size:0.78rem;color:var(--muted);font-family:\'Oswald\',sans-serif;letter-spacing:1px">—</span>'
+            : `<button class="btn-delete btn-remove-user" data-uid="${esc(user.user_id || '')}" data-name="${esc(user.name || '')}">Remove</button>`
+          }
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // change role dropdown menu
+    tbody.querySelectorAll('.role-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const uid     = sel.dataset.uid;
+        const newRole = sel.value;
+        const { error } = await sb.from('user_roles').update({ role: newRole }).eq('user_id', uid);
+        if (error) {
+          showToast('Failed to update role: ' + error.message, 'error');
+          await loadUsers(); // revert display to DB value
+        } else {
+          const u = allUsers.find(u => u.user_id === uid);
+          if (u) u.role = newRole;
+          showToast('Role updated.', 'success');
+        }
+      });
+    });
+
+    // remove access buttons
+    tbody.querySelectorAll('.btn-remove-user').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid  = btn.dataset.uid;
+        const name = btn.dataset.name;
+        if (!confirm(`Permanently delete ${name}?\n\nThis removes them from the admin panel AND deletes their login account entirely. This cannot be undone.`)) return;
+
+        const { error: rpcError } = await sb.rpc('delete_auth_user', { target_user_id: uid });
+        if (rpcError) {
+          showToast('Failed to delete user: ' + rpcError.message, 'error');
+          return;
+        }
+
+        const { error: roleError } = await sb.from('user_roles').delete().eq('user_id', uid);
+        if (roleError) {
+          showToast('Auth account deleted but role cleanup failed: ' + roleError.message, 'error');
+        } else {
+          showToast(`${name} fully deleted.`, 'success');
+        }
+        await loadUsers();
+      });
+    });
+  }
+
+  // change log page
+  async function loadChangelog() {
+    const loading = document.getElementById('changelog-loading');
+    const table   = document.getElementById('changelog-table');
+    const empty   = document.getElementById('changelog-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb
+      .from('change_log')
+      .select('*')
+      .order('changed_at', { ascending: false })
+      .limit(500);
+
+    loading.style.display = 'none';
+    if (error) {
+      showToast('Failed to load change log: ' + error.message, 'error');
+      return;
+    }
+    renderChangelog(data || []);
+  }
+
+  function renderChangelog(rows) {
+    const tbody = document.getElementById('changelog-body');
+    const table = document.getElementById('changelog-table');
+    const empty = document.getElementById('changelog-empty');
+    tbody.innerHTML = '';
+
+    if (rows.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    rows.forEach(entry => {
+      const tr          = document.createElement('tr');
+      const actionClass = entry.action === 'created' ? 'badge-created'
+                        : entry.action === 'deleted'  ? 'badge-deleted'
+                        :                              'badge-updated';
+      const summary    = formatChangeSummary(entry.action, entry.changes);
+      const detailJson = entry.changes ? JSON.stringify(entry.changes, null, 2) : '';
+
+      tr.innerHTML = `
+        <td style="white-space:nowrap;color:var(--muted);font-size:0.83rem">${esc(formatChangeDate(entry.changed_at))}</td>
+        <td style="font-weight:600">${esc(entry.name || '—')}</td>
+        <td><span class="badge ${actionClass}">${esc(entry.action || '—')}</span></td>
+        <td style="font-weight:600" title="${esc(entry.activity || '')}">${esc(entry.activity || '—')}</td>
+        <td class="changes-summary" title="${esc(detailJson)}">${esc(summary)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function formatChangeDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+         + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function formatChangeSummary(action, changes) {
+    if (!changes) return '—';
+    if (action === 'created') return 'Activity created';
+    if (action === 'deleted') return 'Activity deleted';
+    if (action === 'updated') {
+      const fields = Object.keys(changes.old || {});
+      if (fields.length === 0) return 'No fields changed';
+      return fields.map(f => {
+        const o = (changes.old || {})[f];
+        const n = (changes.new || {})[f];
+        if (typeof o === 'boolean' || typeof n === 'boolean') {
+          return `${f}: ${o} → ${n}`;
+        }
+        return f;
+      }).join(', ');
+    }
+    return '—';
+  }
+
+  // ── FILTERS CRUD ────────────────────────────────────────────────────────────
+  let allFilters     = [];
+  let editingFltId   = null;
+  let fltSaveInProg  = false;
+
+  async function loadFilters() {
+    const loading = document.getElementById('filters-loading');
+    const table   = document.getElementById('filters-table');
+    const empty   = document.getElementById('filters-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb.from('filters').select('*').order('sort_order', { ascending: true });
+    loading.style.display = 'none';
+    if (error) { showToast('Failed to load filters: ' + error.message, 'error'); return; }
+    allFilters = data || [];
+    renderFilters();
+  }
+
+  function renderFilters() {
+    const tbody = document.getElementById('filters-body');
+    const table = document.getElementById('filters-table');
+    const empty = document.getElementById('filters-empty');
+    tbody.innerHTML = '';
+    if (allFilters.length === 0) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    allFilters.forEach(f => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600">${esc(f.label || '—')}</td>
+        <td style="font-family:monospace;font-size:0.8rem;color:var(--muted)">${esc(f.key || '—')}</td>
+        <td>${esc(f.require_type || '—')}</td>
+        <td style="font-size:0.82rem">${esc(f.field || '—')}</td>
+        <td style="font-family:monospace;font-size:0.78rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(f.pattern || '')}">${esc(f.pattern || '—')}</td>
+        <td>${f.negate ? '<span class="badge badge-deleted">Yes</span>' : '—'}</td>
+        <td style="text-align:center">${f.sort_order ?? 0}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit flt-edit-btn"   data-id="${f.id}">Edit</button>
+            <button class="btn-delete flt-del-btn"  data-id="${f.id}" data-label="${esc(f.label || '')}">Delete</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.flt-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFilterDrawer(Number(btn.dataset.id)));
+    });
+    tbody.querySelectorAll('.flt-del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id    = Number(btn.dataset.id);
+        const label = btn.dataset.label;
+        if (!confirm(`Delete filter "${label}"?\n\nThis will remove it from the public filter bar immediately.`)) return;
+        const row = allFilters.find(f => f.id === id);
+        const { error } = await sb.from('filters').delete().eq('id', id);
+        if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
+        showToast(`Filter "${label}" deleted.`, 'success');
+        logChange('deleted', `[Filter] ${label}`, { old: row });
+        await loadFilters();
+      });
+    });
+  }
+
+  function openFilterDrawer(id) {
+    editingFltId = id ?? null;
+    document.getElementById('ff-label').value        = '';
+    document.getElementById('ff-key').value          = '';
+    document.getElementById('ff-order').value        = '0';
+    document.getElementById('ff-require-type').value = '';
+    document.getElementById('ff-field').value        = '';
+    document.getElementById('ff-pattern').value      = '';
+    document.getElementById('ff-negate').checked     = false;
+    document.getElementById('flt-drawer-title').textContent = 'Add Filter';
+
+    if (editingFltId != null) {
+      const f = allFilters.find(r => r.id === editingFltId);
+      if (f) {
+        document.getElementById('flt-drawer-title').textContent = 'Editing: ' + (f.label || 'Filter');
+        document.getElementById('ff-label').value        = f.label        || '';
+        document.getElementById('ff-key').value          = f.key          || '';
+        document.getElementById('ff-order').value        = f.sort_order   ?? 0;
+        document.getElementById('ff-require-type').value = f.require_type || '';
+        document.getElementById('ff-field').value        = f.field        || '';
+        document.getElementById('ff-pattern').value      = f.pattern      || '';
+        document.getElementById('ff-negate').checked     = !!f.negate;
+      }
+    }
+    document.getElementById('btn-save-filter').textContent = 'SAVE';
+    document.getElementById('btn-save-filter').disabled    = false;
+    fltSaveInProg = false;
+    document.getElementById('flt-drawer-overlay').classList.add('open');
+    document.getElementById('ff-label').focus();
+  }
+
+  function closeFilterDrawer() {
+    document.getElementById('flt-drawer-overlay').classList.remove('open');
+    editingFltId  = null;
+    fltSaveInProg = false;
+    document.getElementById('btn-save-filter').textContent = 'SAVE';
+    document.getElementById('btn-save-filter').disabled    = false;
+  }
+
+  document.getElementById('btn-add-filter').addEventListener('click', () => openFilterDrawer(null));
+  document.getElementById('flt-drawer-close').addEventListener('click', closeFilterDrawer);
+  document.getElementById('btn-cancel-flt-drawer').addEventListener('click', closeFilterDrawer);
+  document.getElementById('flt-drawer-overlay').addEventListener('click', e => { if (e.target === document.getElementById('flt-drawer-overlay')) closeFilterDrawer(); });
+
+  document.getElementById('btn-save-filter').addEventListener('click', async () => {
+    if (fltSaveInProg) return;
+    const label   = document.getElementById('ff-label').value.trim();
+    const key     = document.getElementById('ff-key').value.trim();
+    if (!label) { showToast('Label is required.', 'error'); return; }
+    if (!key)   { showToast('Key is required.', 'error'); return; }
+
+    fltSaveInProg = true;
+    const saveBtn = document.getElementById('btn-save-filter');
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled    = true;
+
+    const payload = {
+      label:        label,
+      key:          key,
+      sort_order:   parseInt(document.getElementById('ff-order').value) || 0,
+      require_type: document.getElementById('ff-require-type').value || null,
+      field:        document.getElementById('ff-field').value        || null,
+      pattern:      document.getElementById('ff-pattern').value.trim() || null,
+      negate:       document.getElementById('ff-negate').checked,
+    };
+
+    const oldRow = editingFltId != null ? allFilters.find(f => f.id === editingFltId) : null;
+    let error;
+    if (editingFltId != null) {
+      ({ error } = await sb.from('filters').update(payload).eq('id', editingFltId));
+    } else {
+      ({ error } = await sb.from('filters').insert(payload));
+    }
+
+    fltSaveInProg = false;
+    saveBtn.textContent = 'SAVE';
+    saveBtn.disabled    = false;
+
+    if (error) { showToast('Error saving filter: ' + error.message, 'error'); return; }
+
+    if (editingFltId != null && oldRow) {
+      const changesOld = {}, changesNew = {};
+      for (const k of Object.keys(payload)) {
+        if (String(payload[k] ?? '') !== String(oldRow[k] ?? '')) {
+          changesOld[k] = oldRow[k]; changesNew[k] = payload[k];
+        }
+      }
+      if (Object.keys(changesOld).length > 0)
+        logChange('updated', `[Filter] ${label}`, { old: changesOld, new: changesNew });
+    } else if (editingFltId == null) {
+      logChange('created', `[Filter] ${label}`, { new: payload });
+    }
+    showToast(editingFltId != null ? 'Filter updated!' : 'Filter added!', 'success');
+    closeFilterDrawer();
+    await loadFilters();
+  });
+
+  // ── RESOURCES CRUD ──────────────────────────────────────────────────────────
+  let allResources    = [];
+  let editingResId    = null;
+  let resSaveInProg   = false;
+
+  async function loadResourcesAdmin() {
+    const loading = document.getElementById('resources-admin-loading');
+    const table   = document.getElementById('resources-admin-table');
+    const empty   = document.getElementById('resources-admin-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb.from('resources').select('*').order('type', { ascending: true }).order('name', { ascending: true });
+    loading.style.display = 'none';
+    if (error) { showToast('Failed to load resources: ' + error.message, 'error'); return; }
+    allResources = data || [];
+    renderResourcesAdmin();
+  }
+
+  function renderResourcesAdmin() {
+    const tbody = document.getElementById('resources-admin-body');
+    const table = document.getElementById('resources-admin-table');
+    const empty = document.getElementById('resources-admin-empty');
+    tbody.innerHTML = '';
+    if (allResources.length === 0) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    allResources.forEach(r => {
+      const typeBadge = r.type === 'contact'
+        ? '<span class="badge badge-contact">Contact</span>'
+        : '<span class="badge badge-link">Link</span>';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${typeBadge}</td>
+        <td style="font-weight:600" title="${esc(r.name || '')}">${esc(r.name || '—')}</td>
+        <td style="color:var(--muted);font-size:0.85rem">${esc(r.role || '—')}</td>
+        <td style="font-size:0.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.link_email || '')}">${esc(r.link_email || '—')}</td>
+        <td style="color:var(--muted);font-size:0.85rem">${esc(r.school || '—')}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit res-edit-btn"   data-id="${r.id}">Edit</button>
+            <button class="btn-delete res-del-btn"  data-id="${r.id}" data-name="${esc(r.name || '')}">Delete</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.res-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openResourceDrawer(Number(btn.dataset.id)));
+    });
+    tbody.querySelectorAll('.res-del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id   = Number(btn.dataset.id);
+        const name = btn.dataset.name;
+        if (!confirm(`Delete "${name}"?\n\nThis will remove it from the public Resources page immediately.`)) return;
+        const row = allResources.find(r => r.id === id);
+        const { error } = await sb.from('resources').delete().eq('id', id);
+        if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
+        showToast(`"${name}" deleted.`, 'success');
+        logChange('deleted', `[Resource] ${name}`, { old: row });
+        await loadResourcesAdmin();
+      });
+    });
+  }
+
+  function openResourceDrawer(id) {
+    editingResId = id ?? null;
+    document.getElementById('fr-type').value       = '';
+    document.getElementById('fr-name').value       = '';
+    document.getElementById('fr-role').value       = '';
+    document.getElementById('fr-link-email').value = '';
+    document.getElementById('fr-school').value     = '';
+    document.getElementById('res-drawer-title').textContent = 'Add Resource';
+
+    if (editingResId != null) {
+      const r = allResources.find(x => x.id === editingResId);
+      if (r) {
+        document.getElementById('res-drawer-title').textContent = 'Editing: ' + (r.name || 'Resource');
+        document.getElementById('fr-type').value       = r.type       || '';
+        document.getElementById('fr-name').value       = r.name       || '';
+        document.getElementById('fr-role').value       = r.role       || '';
+        document.getElementById('fr-link-email').value = r.link_email || '';
+        document.getElementById('fr-school').value     = r.school     || '';
+      }
+    }
+    document.getElementById('btn-save-resource').textContent = 'SAVE';
+    document.getElementById('btn-save-resource').disabled    = false;
+    resSaveInProg = false;
+    document.getElementById('res-drawer-overlay').classList.add('open');
+    document.getElementById('fr-type').focus();
+  }
+
+  function closeResourceDrawer() {
+    document.getElementById('res-drawer-overlay').classList.remove('open');
+    editingResId  = null;
+    resSaveInProg = false;
+    document.getElementById('btn-save-resource').textContent = 'SAVE';
+    document.getElementById('btn-save-resource').disabled    = false;
+  }
+
+  document.getElementById('btn-add-resource').addEventListener('click', () => openResourceDrawer(null));
+  document.getElementById('res-drawer-close').addEventListener('click', closeResourceDrawer);
+  document.getElementById('btn-cancel-res-drawer').addEventListener('click', closeResourceDrawer);
+  document.getElementById('res-drawer-overlay').addEventListener('click', e => { if (e.target === document.getElementById('res-drawer-overlay')) closeResourceDrawer(); });
+
+  document.getElementById('btn-save-resource').addEventListener('click', async () => {
+    if (resSaveInProg) return;
+    const type  = document.getElementById('fr-type').value;
+    const name  = document.getElementById('fr-name').value.trim();
+    const linkEmail = document.getElementById('fr-link-email').value.trim();
+    if (!type)      { showToast('Type is required.', 'error'); return; }
+    if (!name)      { showToast('Name is required.', 'error'); return; }
+    if (!linkEmail) { showToast('Link / Email is required.', 'error'); return; }
+
+    resSaveInProg = true;
+    const saveBtn = document.getElementById('btn-save-resource');
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled    = true;
+
+    const payload = {
+      type:       type,
+      name:       name,
+      role:       document.getElementById('fr-role').value.trim()   || null,
+      link_email: linkEmail,
+      school:     document.getElementById('fr-school').value.trim() || null,
+    };
+
+    const oldRow = editingResId != null ? allResources.find(r => r.id === editingResId) : null;
+    let error;
+    if (editingResId != null) {
+      ({ error } = await sb.from('resources').update(payload).eq('id', editingResId));
+    } else {
+      ({ error } = await sb.from('resources').insert(payload));
+    }
+
+    resSaveInProg = false;
+    saveBtn.textContent = 'SAVE';
+    saveBtn.disabled    = false;
+
+    if (error) { showToast('Error saving resource: ' + error.message, 'error'); return; }
+
+    if (editingResId != null && oldRow) {
+      const changesOld = {}, changesNew = {};
+      for (const k of Object.keys(payload)) {
+        if (String(payload[k] ?? '') !== String(oldRow[k] ?? '')) {
+          changesOld[k] = oldRow[k]; changesNew[k] = payload[k];
+        }
+      }
+      if (Object.keys(changesOld).length > 0)
+        logChange('updated', `[Resource] ${name}`, { old: changesOld, new: changesNew });
+    } else if (editingResId == null) {
+      logChange('created', `[Resource] ${name}`, { new: payload });
+    }
+    showToast(editingResId != null ? 'Resource updated!' : 'Resource added!', 'success');
+    closeResourceDrawer();
+    await loadResourcesAdmin();
+  });
+  // ── end filters & resources ─────────────────────────────────────────────────
+
+  // add user drawer and button and stuff
+  document.getElementById('btn-add-user').addEventListener('click', () => {
+    document.getElementById('add-user-card').classList.add('open');
+    document.getElementById('new-user-name').focus();
+  });
+
+  document.getElementById('btn-cancel-user').addEventListener('click', () => {
+    document.getElementById('add-user-card').classList.remove('open');
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-uuid').value = '';
+    document.getElementById('new-user-role').value = 'admin';
+  });
+
+  document.getElementById('btn-save-user').addEventListener('click', async () => {
+    const name = document.getElementById('new-user-name').value.trim();
+    const uuid = document.getElementById('new-user-uuid').value.trim();
+    const role = document.getElementById('new-user-role').value;
+
+    if (!name) { showToast('Please enter a name.', 'error'); return; }
+    if (!uuid)  { showToast('Please enter the User ID (UUID).', 'error'); return; }
+    // uuid format check
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+      showToast('That doesn\'t look like a valid UUID. Copy it directly from Supabase.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btn-save-user');
+    btn.textContent = 'Adding…';
+    btn.disabled    = true;
+
+    const { error } = await sb.from('user_roles').insert({ user_id: uuid, name, role });
+
+    btn.textContent = 'ADD USER';
+    btn.disabled    = false;
+
+    if (error) {
+      showToast('Failed to add user: ' + error.message, 'error');
+    } else {
+      const label = role === 'super_admin' ? 'Super Admin' : 'Admin';
+      showToast(`${name} added as ${label}.`, 'success');
+      document.getElementById('add-user-card').classList.remove('open');
+      document.getElementById('new-user-name').value = '';
+      document.getElementById('new-user-uuid').value = '';
+      document.getElementById('new-user-role').value = 'admin';
+      await loadUsers();
+    }
+  });
+</script>
+</body>
+</html>
