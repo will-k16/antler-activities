@@ -23,7 +23,10 @@
       /* Theme variables - light (default) */
       --bg:                  #f0f0f0;
       --text:                #111111;
-      --card:                #111111;
+      --card:                #e4e4e4;
+      --card-text:           #111111;
+      --card-muted:          #555555;
+      --card-link:           #0055aa;
       --gray:                #1a1a1a;
       --nav-bg:              #ffffff;
       --nav-border:          #dddddd;
@@ -42,14 +45,18 @@
       --filter-hover-border: #aaaaaa;
       --filter-hover-color:  #333333;
       --section-hdr-color:   #555555;
-      --card-expand-border:  #333333;
-      --modal-track:         #222222;
+      --card-border:         #333333;
+      --card-expand-border:  #b8b8b8;
+      --modal-track:         #c0c0c0;
     }
 
     [data-theme="dark"] {
       --bg:                  #0f0f0f;
       --text:                #e0e0e0;
       --card:                #1c1c1c;
+      --card-text:           #ffffff;
+      --card-muted:          #bbbbbb;
+      --card-link:           #5bc8ff;
       --gray:                #252525;
       --nav-bg:              #181818;
       --nav-border:          #2a2a2a;
@@ -68,6 +75,7 @@
       --filter-hover-border: #555555;
       --filter-hover-color:  #e0e0e0;
       --section-hdr-color:   #aaaaaa;
+      --card-border:         #555555;
       --card-expand-border:  #2a2a2a;
       --modal-track:         #2a2a2a;
     }
@@ -203,10 +211,10 @@
     }
     .card {
       background: var(--card);
-      border: 3px solid var(--red);
+      border: 3px solid var(--card-border);
       border-radius: 12px;
       padding: 22px 20px 18px;
-      color: var(--white);
+      color: var(--card-text);
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -216,7 +224,7 @@
     }
     .card:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(234,10,42,0.3);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
     .card.student-led {
       border-color: var(--gold);
@@ -234,17 +242,17 @@
     }
     .card-coaches {
       font-size: 0.78rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 1.7;
     }
     .card-coaches a {
-      color: #aaa;
+      color: var(--card-muted);
       text-decoration: none;
     }
     .card-coaches a:hover { color: var(--gold); }
     .card-overview {
       font-size: 0.82rem;
-      color: #bbb;
+      color: var(--card-muted);
       line-height: 1.5;
       flex: 1;
       overflow: hidden;
@@ -283,7 +291,7 @@
       max-height: 88vh;
       overflow-y: auto;
       padding: 30px 28px 28px;
-      color: var(--white);
+      color: var(--card-text);
       position: relative;
       scrollbar-width: thin;
       scrollbar-color: var(--red) var(--modal-track);
@@ -335,12 +343,12 @@
     }
     .modal-coaches {
       font-size: 0.85rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 2;
       margin-bottom: 18px;
     }
     .modal-coaches a {
-      color: #aaa;
+      color: var(--card-muted);
       text-decoration: none;
     }
     .modal-coaches a:hover { color: var(--gold); text-decoration: underline; }
@@ -350,14 +358,14 @@
       font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: var(--white);
+      color: var(--card-text);
       border-bottom: 2px solid var(--red);
       padding-bottom: 4px;
       margin: 20px 0 8px;
     }
     .modal-text {
       font-size: 0.88rem;
-      color: #ccc;
+      color: var(--card-muted);
       line-height: 1.65;
     }
     .modal-links {
@@ -367,7 +375,7 @@
       margin-top: 4px;
     }
     .modal-links a {
-      color: #5bc8ff;
+      color: var(--card-link);
       font-size: 0.88rem;
       text-decoration: none;
     }
@@ -489,12 +497,35 @@
       font-size: 1rem;
       letter-spacing: 1px;
     }
-    /* calendar tab */
-    .calendar-section { width: 100%; }
+    /* resources section */
+    .resources-section { width: 100%; }
+    #resources-subnav {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--nav-border);
+      margin-bottom: 24px;
+    }
+    .res-tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 12px 28px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--tab-color);
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .res-tab-btn:hover { color: var(--red); }
+    .res-tab-btn.active { color: var(--tab-active-color); border-bottom-color: var(--red); }
     .calendar-frame {
       width: 100%;
-      height: calc(100vh - 240px);
-      min-height: 560px;
+      height: calc(100vh - 300px);
+      min-height: 500px;
       border: none;
       border-radius: 8px;
       background: #fff;
@@ -507,8 +538,86 @@
       font-size: 0.82rem;
       color: var(--muted);
     }
-    .calendar-fallback a { color: #5bc8ff; text-decoration: none; }
+    .calendar-fallback a { color: var(--card-link); text-decoration: none; }
     .calendar-fallback a:hover { text-decoration: underline; }
+    /* contact info */
+    .school-section { margin-bottom: 40px; }
+    .school-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      border-bottom: 3px solid var(--red);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .contact-card {
+      background: var(--card);
+      border: 2px solid var(--card-expand-border);
+      border-radius: 10px;
+      padding: 18px 16px;
+      color: var(--card-text);
+    }
+    .contact-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .contact-role { font-size: 0.78rem; color: var(--card-muted); margin-bottom: 10px; }
+    .contact-email a { color: var(--card-link); text-decoration: none; font-size: 0.8rem; }
+    .contact-email a:hover { text-decoration: underline; }
+    /* links */
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .link-card {
+      background: var(--card);
+      border: 2px solid var(--card-expand-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .link-card:hover { border-color: var(--red); box-shadow: 0 4px 16px rgba(234,10,42,0.15); }
+    .link-card a {
+      color: var(--card-text);
+      text-decoration: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .link-card a:hover { color: var(--card-link); }
+    .link-icon { color: var(--card-link); flex-shrink: 0; line-height: 0; }
+    .res-empty {
+      font-family: 'Oswald', sans-serif;
+      color: var(--empty-color);
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      padding: 40px 0;
+      text-align: center;
+    }
+    .res-loading {
+      text-align: center;
+      padding: 60px 0;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      color: var(--load-color);
+      letter-spacing: 2px;
+    }
     /* footer with our names and stuff */
     footer {
       background: #000000;
@@ -543,8 +652,8 @@
     <button class="tab-btn" data-section="activities">
       <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg></span>Activities
     </button>
-    <button class="tab-btn" data-section="calendar">
-      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></span>Activities Calendar
+    <button class="tab-btn" data-section="resources">
+      <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></span>Resources
     </button>
   </nav>
   <div id="search-filter-bar">
@@ -556,6 +665,7 @@
     <div id="filter-panel" style="display:none"></div>
   </div>
   <main>
+    <!-- loading spinner -->
     <div id="loading">
       <div class="spinner"></div>
       Loading...
@@ -571,15 +681,31 @@
     <div id="activities" class="section">
       <div class="card-grid" id="activities-grid"></div>
     </div>
-    <div id="calendar" class="section calendar-section">
-      <iframe
-        src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
-        class="calendar-frame"
-        title="Activities Calendar"
-        allowfullscreen
-        loading="lazy"
-      ></iframe>
-      <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+  <!-- resources nav for headers like contacts and links and calendar and stuff-->
+    <div id="resources" class="section resources-section">
+      <div id="resources-subnav">
+        <button class="res-tab-btn active" data-resview="calendar">Calendar</button>
+        <button class="res-tab-btn" data-resview="contacts">Contact Info</button>
+        <button class="res-tab-btn" data-resview="links">Links</button>
+      </div>
+      <div id="resview-calendar">
+        <iframe
+          src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
+          class="calendar-frame"
+          title="Activities Calendar"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+        <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+      </div>
+      <div id="resview-contacts" style="display:none">
+        <div id="contacts-loading" class="res-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+        <div id="contacts-content"></div>
+      </div>
+      <div id="resview-links" style="display:none">
+        <div id="links-loading" class="res-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+        <div id="links-content"></div>
+      </div>
     </div>
   </main>
   <!-- sneaky little footer with our names ;) -->
@@ -589,6 +715,7 @@ Special thanks to Sara Fjell (sfjell@epsne.org) and Theresa Crnkovich (tcrnkovic
 For inquiries, please contact anyone in the development team above.
 <a href="admin.html" style="display:inline-block;margin-top:10px;color:#444;font-size:0.7rem;text-decoration:none;opacity:0.5;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">&#x1F512;</a>
   </footer>
+  <!-- admin lock link (may change in the future idk) ^^^^^-->
   <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div id="modal">
       <button id="modal-close" aria-label="Close">&times;</button>
@@ -620,24 +747,37 @@ For inquiries, please contact anyone in the development team above.
     var overlay   = document.getElementById('modal-overlay');
     var modal     = document.getElementById('modal');
     var modalBody = document.getElementById('modal-body');
-    // filter types - if something like tech, for example, it looks for if the overview or name of the club/activity says tech, computer, program, cod (like coding and code), etc.
-    var FILTERS = [
-      { key: 'fall-sport',    label: 'Fall Sport',          test: function(i) { return i.type === 'Sport' && /fall/i.test(i.timeOfYear); } },
-      { key: 'spring-sport',  label: 'Spring Sport',        test: function(i) { return i.type === 'Sport' && /spring/i.test(i.timeOfYear); } },
-      { key: 'winter-sport',  label: 'Winter Sport',        test: function(i) { return i.type === 'Sport' && /winter/i.test(i.timeOfYear); } },
-      { key: 'year-round',    label: 'Year-Round',          test: function(i) { return /year.?round|all year|year.?long/i.test(i.timeOfYear); } },
-      { key: 'after-school',  label: 'After School',        test: function(i) { return /after school/i.test(i.meetingTimes); } },
-      { key: 'during-school', label: 'During School',       test: function(i) { return /during school|lunch|\bta\b|advisory/i.test(i.meetingTimes); } },
-      { key: 'weekends',      label: 'Weekends',            test: function(i) { return /weekend|saturday|sunday/i.test(i.meetingTimes); } },
-      { key: 'student-led',   label: 'Student-Led',         test: function(i) { return !!i.studentLed; } },
-      { key: 'tech',          label: 'Tech & STEM',         test: function(i) { return /tech|computer|program|cod|stem|digital|robot|engineer/i.test(i.name + ' ' + i.overview); } },
-      { key: 'arts',          label: 'Arts & Creative',     test: function(i) { return /art|music|band|choir|drama|theater|theatre|creative|design|paint|danc/i.test(i.name + ' ' + i.overview); } },
-      { key: 'academic',      label: 'Academic',            test: function(i) { return /academic|math|science|speech|debate|deca|fbla|nhs|honor|scholar/i.test(i.name + ' ' + i.overview); } },
-      { key: 'service',       label: 'Service & Community', test: function(i) { return /service|community|volunteer|ambassador|charity|outreach/i.test(i.name + ' ' + i.overview); } },
-      { key: 'competitive',   label: 'Competitive',         test: function(i) { return i.type === 'Sport' || /compet|tournament|championship|contest/i.test(i.name + ' ' + i.overview); } },
-      { key: 'boys-sport',    label: 'Boys Sport',          test: function(i) { return i.type === 'Sport' && !/girls/i.test(i.name + ' ' + i.overview); } },
-      { key: 'girls-sport',   label: 'Girls Sport',         test: function(i) { return i.type === 'Sport' && !/boys/i.test(i.name + ' ' + i.overview); } },
-    ];
+    // Filters are loaded dynamically from the Supabase 'filters' table
+    var FILTERS = [];
+    // Builds a test function for a filter row fetched from the DB
+    function buildFilterTestFn(f) {
+      return function(item) {
+        if (f.require_type && item.type !== f.require_type) return false;
+        if (!f.field) return true;
+        if (f.field === 'studentLed') return !!item.studentLed;
+        if (!f.pattern) return true;
+        var re = new RegExp(f.pattern, 'i');
+        var val = '';
+        if (f.field === 'timeOfYear')    val = item.timeOfYear    || '';
+        else if (f.field === 'meetingTimes')  val = item.meetingTimes  || '';
+        else if (f.field === 'nameOverview')  val = (item.name || '') + ' ' + (item.overview || '');
+        var matches = re.test(val);
+        return f.negate ? !matches : matches;
+      };
+    }
+    // Resources data (loaded lazily when the Resources tab is first opened)
+    var resourcesData = null;
+    var resourcesRequested = false;
+    // School name normalization for Contact Info grouping
+    var SCHOOL_ORDER = ['Elkhorn High School', 'Elkhorn North High School', 'Elkhorn South High School'];
+    function normalizeSchool(school) {
+      if (!school) return null;
+      var s = school.trim();
+      if (/^ehs$/i.test(s) || /elkhorn\s+(high|hs)/i.test(s))  return 'Elkhorn High School';
+      if (/^enhs$/i.test(s) || /elkhorn\s+north/i.test(s))     return 'Elkhorn North High School';
+      if (/^eshs$/i.test(s) || /elkhorn\s+south/i.test(s))     return 'Elkhorn South High School';
+      return s;
+    }
     //All stuff for searching/filtering with the headers based on current tab
     var tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(function(btn) {
@@ -749,12 +889,13 @@ For inquiries, please contact anyone in the development team above.
       var searchFilterBar = document.getElementById('search-filter-bar');
       var searchView = document.getElementById('search-results-view');
       var sections = document.querySelectorAll('.section');
-      // calendar tab: show iframe, hide search bar entirely
-      if (tab === 'calendar') {
+      // resources tab: show section, hide search bar, lazy-load data
+      if (tab === 'resources') {
         searchFilterBar.style.display = 'none';
         searchView.style.display = 'none';
         sections.forEach(function(s) { s.style.display = 'none'; });
-        document.getElementById('calendar').style.display = 'block';
+        document.getElementById('resources').style.display = 'block';
+        loadResources();
         return;
       }
       searchFilterBar.style.display = '';
@@ -809,6 +950,117 @@ For inquiries, please contact anyone in the development team above.
     });
 
     document.getElementById('search-input').addEventListener('input', renderView);
+    // ── Resources sub-nav ──────────────────────────────────────────────────────
+    document.querySelectorAll('.res-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.res-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        switchResView(btn.dataset.resview);
+      });
+    });
+
+    function switchResView(view) {
+      document.getElementById('resview-calendar').style.display  = view === 'calendar'  ? 'block' : 'none';
+      document.getElementById('resview-contacts').style.display  = view === 'contacts'  ? 'block' : 'none';
+      document.getElementById('resview-links').style.display     = view === 'links'     ? 'block' : 'none';
+      if (view === 'contacts') {
+        if (resourcesData !== null) {
+          document.getElementById('contacts-loading').style.display = 'none';
+          renderContacts();
+        } else {
+          document.getElementById('contacts-loading').style.display = 'block';
+          document.getElementById('contacts-content').innerHTML = '';
+        }
+      } else if (view === 'links') {
+        if (resourcesData !== null) {
+          document.getElementById('links-loading').style.display = 'none';
+          renderLinks();
+        } else {
+          document.getElementById('links-loading').style.display = 'block';
+          document.getElementById('links-content').innerHTML = '';
+        }
+      }
+    }
+
+    function loadResources() {
+      if (resourcesRequested) return;
+      resourcesRequested = true;
+      fetch(SUPABASE_URL + '/rest/v1/resources?select=*', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        resourcesData = data;
+        // re-render whichever sub-view is active
+        var btn = document.querySelector('.res-tab-btn.active');
+        if (btn) switchResView(btn.dataset.resview);
+      })
+      .catch(function() {
+        resourcesData = [];
+        var btn = document.querySelector('.res-tab-btn.active');
+        if (btn) switchResView(btn.dataset.resview);
+      });
+    }
+
+    function renderContacts() {
+      var container = document.getElementById('contacts-content');
+      var contacts = (resourcesData || []).filter(function(r) { return r.type === 'contact'; });
+      if (contacts.length === 0) {
+        container.innerHTML = '<p class="res-empty">No contact information available.</p>';
+        return;
+      }
+      // group by normalized school name
+      var groups = {};
+      contacts.forEach(function(c) {
+        var school = normalizeSchool(c.school) || 'General';
+        if (!groups[school]) groups[school] = [];
+        groups[school].push(c);
+      });
+      var schoolNames = Object.keys(groups).sort(function(a, b) {
+        var ai = SCHOOL_ORDER.indexOf(a), bi = SCHOOL_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+      var html = '';
+      schoolNames.forEach(function(school) {
+        html += '<div class="school-section"><div class="school-header">' + esc(school) + '</div><div class="contact-grid">';
+        groups[school].forEach(function(c) {
+          html += '<div class="contact-card">';
+          html += '<div class="contact-name">' + esc(c.name || '') + '</div>';
+          if (c.role) html += '<div class="contact-role">' + esc(c.role) + '</div>';
+          if (c.link_email) html += '<div class="contact-email"><a href="mailto:' + esc(c.link_email) + '">' + esc(c.link_email) + '</a></div>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+      container.innerHTML = html;
+    }
+
+    function renderLinks() {
+      var container = document.getElementById('links-content');
+      var links = (resourcesData || []).filter(function(r) { return r.type === 'link'; });
+      if (links.length === 0) {
+        container.innerHTML = '<p class="res-empty">No links available.</p>';
+        return;
+      }
+      var html = '<div class="links-grid">';
+      links.forEach(function(l) {
+        html += '<div class="link-card">';
+        html += '<span class="link-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>';
+        if (l.link_email) {
+          html += '<a href="' + esc(l.link_email) + '" target="_blank" rel="noopener noreferrer">' + esc(l.name || l.link_email) + '</a>';
+        } else {
+          html += '<span style="color:var(--card-text);font-family:\'Oswald\',sans-serif;font-size:0.95rem">' + esc(l.name || '') + '</span>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+    // ── end resources ──────────────────────────────────────────────────────────
+
     // opens pop up and uses similar information to card rendering but with headers and stuff
     function openModal(item) {
       modal.classList.toggle('student-led-modal', item.studentLed);
@@ -925,7 +1177,10 @@ For inquiries, please contact anyone in the development team above.
           '.modal-text{font-size:1.1rem;line-height:1.8}' +
           '.modal-links a{font-size:1.1rem}' +
           '.modal-student-led-badge{font-size:0.95rem;padding:5px 14px}' +
-          'footer{font-size:0.82rem;line-height:2;padding:20px 24px}';
+          'footer{font-size:0.82rem;line-height:2;padding:20px 24px}' +
+          '#resources-subnav{gap:0}.res-tab-btn{padding:10px 14px;font-size:0.82rem;letter-spacing:1px}' +
+          '.contact-grid{grid-template-columns:1fr}.links-grid{grid-template-columns:1fr}' +
+          '.school-header{font-size:1.05rem}.contact-name{font-size:0.95rem}';
       } else {
         el.textContent = '';
       }
@@ -939,15 +1194,26 @@ For inquiries, please contact anyone in the development team above.
     // The service role key (which bypasses RLS) never appears here and stays in the Supabase dashboard.
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhcXVhY2dqbnF0enVob2p3bHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTEzMzIsImV4cCI6MjA4OTE2NzMzMn0.paDS0BB5pHzEj5Mv0QUAhI1BZB0vGJ0gjsZy4m1TS3A';
 
-    fetch(`${SUPABASE_URL}/rest/v1/Activities?Visible=eq.true&select=*`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY
-      }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      console.log(data);
+    // Load activities and filters in parallel; render once both are ready
+    var activitiesPromise = fetch(SUPABASE_URL + '/rest/v1/Activities?Visible=eq.true&select=*', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    }).then(function(res) { return res.json(); });
+
+    var filtersPromise = fetch(SUPABASE_URL + '/rest/v1/filters?select=*&order=sort_order.asc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    }).then(function(res) { return res.json(); }).catch(function() { return []; });
+
+    Promise.all([activitiesPromise, filtersPromise])
+    .then(function(results) {
+      var data        = results[0];
+      var filtersData = results[1];
+
+      // Build dynamic filter functions from DB rows
+      FILTERS = filtersData.map(function(f) {
+        return { key: f.key, label: f.label, test: buildFilterTestFn(f) };
+      });
+      buildFilterChips();
+
       var mapped = data.map(function(row) {
         var links = [];
         if (row['links']) {

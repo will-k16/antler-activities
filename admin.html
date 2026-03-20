@@ -776,6 +776,32 @@
     /* change_log for supabase table */
     #view-changelog { display: none; flex: 1; flex-direction: column; }
     #view-changelog.active { display: flex; }
+
+    /* filters & resources management views */
+    #view-filters, #view-resources-admin { display: none; flex: 1; flex-direction: column; }
+    #view-filters.active, #view-resources-admin.active { display: flex; }
+    .fr-toolbar { background: var(--card); border-bottom: 2px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .fr-toolbar-label { flex: 1; font-family: 'Oswald', sans-serif; font-size: 0.88rem; letter-spacing: 1px; color: var(--muted); }
+    .fr-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
+    .btn-fr-add { background: var(--red); color: var(--white); border: none; border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; padding: 9px 20px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .btn-fr-add:hover { background: #c50024; }
+    /* shared side-drawer for filters & resources - mirrors existing #drawer pattern */
+    .fr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; justify-content: flex-end; }
+    .fr-overlay.open { display: flex; }
+    .fr-panel { background: var(--card); width: 100%; max-width: 520px; height: 100vh; overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; animation: slideIn 0.25s ease; }
+    .fr-panel-header { background: var(--red); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .fr-panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 3px; color: var(--black); }
+    .fr-panel-close { background: rgba(0,0,0,0.18); border: none; color: var(--black); font-size: 1.2rem; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .fr-panel-close:hover { background: rgba(0,0,0,0.3); }
+    .fr-panel-body { flex: 1; padding: 24px 24px 8px; overflow-y: auto; }
+    .fr-panel-footer { border-top: 2px solid var(--border); padding: 16px 24px; display: flex; gap: 10px; flex-shrink: 0; background: var(--card); }
+    .fr-save-btn { flex: 1; background: var(--red); color: var(--white); border: none; border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 2px; padding: 13px; cursor: pointer; transition: background 0.2s; }
+    .fr-save-btn:hover { background: #c50024; }
+    .fr-save-btn:disabled { background: #bbb; cursor: not-allowed; }
+    .fr-cancel-btn { background: var(--bg); border: 2px solid var(--border); color: var(--text); border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; padding: 13px 22px; cursor: pointer; transition: border-color 0.2s; }
+    .fr-cancel-btn:hover { border-color: #aaa; }
+    .badge-link    { background: #e8f8ff; color: #0066aa; }
+    .badge-contact { background: #f0e8ff; color: #6a1aaa; }
     #changelog-toolbar {
       background: var(--card);
       border-bottom: 2px solid var(--border);
@@ -841,6 +867,8 @@
   <!-- super_admin nav -->
   <div id="admin-nav">
     <button class="nav-tab active" data-view="activities">Activities</button>
+    <button class="nav-tab"        data-view="filters">Filters</button>
+    <button class="nav-tab"        data-view="resources-admin">Resources</button>
     <button class="nav-tab"        data-view="users">User Management</button>
     <button class="nav-tab"        data-view="changelog">Change Log</button>
   </div>
@@ -877,6 +905,58 @@
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- filters management -->
+  <div id="view-filters">
+    <div class="fr-toolbar">
+      <span class="fr-toolbar-label">Manage filter chips shown on the public activities page</span>
+      <button id="btn-add-filter" class="btn-fr-add">＋ Add Filter</button>
+    </div>
+    <div class="fr-table-wrap">
+      <div id="filters-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="filters-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No filters yet. Add one to get started.</div>
+      <table id="filters-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Key</th>
+            <th>Requires Type</th>
+            <th>Field</th>
+            <th>Pattern</th>
+            <th>Negate</th>
+            <th>Order</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="filters-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- resources management -->
+  <div id="view-resources-admin">
+    <div class="fr-toolbar">
+      <span class="fr-toolbar-label">Manage contacts and links shown on the public Resources page</span>
+      <button id="btn-add-resource" class="btn-fr-add">＋ Add Entry</button>
+    </div>
+    <div class="fr-table-wrap">
+      <div id="resources-admin-loading" style="display:none"><div class="spinner"></div>Loading…</div>
+      <div id="resources-admin-empty" style="display:none;text-align:center;padding:60px;font-family:'Oswald',sans-serif;letter-spacing:1px;color:var(--muted)">No entries yet.</div>
+      <table id="resources-admin-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Link / Email</th>
+            <th>School</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="resources-admin-body"></tbody>
       </table>
     </div>
   </div>
@@ -1068,6 +1148,112 @@
   </div>
 </div>
 
+<!-- filter add/edit drawer -->
+<div id="flt-drawer-overlay" class="fr-overlay">
+  <div class="fr-panel">
+    <div class="fr-panel-header">
+      <span id="flt-drawer-title" class="fr-panel-title">Add Filter</span>
+      <button class="fr-panel-close" id="flt-drawer-close">✕</button>
+    </div>
+    <div class="fr-panel-body">
+      <div class="drawer-section-title">Display</div>
+      <div class="form-group">
+        <label>Label <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="ff-label" placeholder="e.g. Fall Sport — text shown on the filter chip" />
+      </div>
+      <div class="form-group">
+        <label>Key <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="ff-key" placeholder="e.g. fall-sport — unique slug, lowercase, hyphens only" />
+        <div class="field-hint">Must be unique. Used internally to track which filters are active. No spaces — use hyphens.</div>
+      </div>
+      <div class="form-group">
+        <label>Sort Order</label>
+        <input type="number" id="ff-order" placeholder="0" min="0" />
+        <div class="field-hint">Controls where this chip appears in the filter bar. Lower numbers appear first.</div>
+      </div>
+      <div class="drawer-section-title">Match Rules</div>
+      <div class="form-group">
+        <label>Requires Type</label>
+        <select id="ff-require-type">
+          <option value="">— Any type (applies to all activities) —</option>
+          <option value="Sport">Sport only</option>
+          <option value="Club">Club only</option>
+          <option value="Activity">Activity only</option>
+        </select>
+        <div class="field-hint">If set, this filter only appears and only matches activities of this specific type. Example: "Fall Sport" should require type "Sport".</div>
+      </div>
+      <div class="form-group">
+        <label>Field to Check</label>
+        <select id="ff-field">
+          <option value="">— No field check (match by type only) —</option>
+          <option value="timeOfYear">Time of Year — checks the activity's "Time of Year" field (e.g. Fall, Spring)</option>
+          <option value="meetingTimes">Meeting Times — checks the "Meeting Times" field (e.g. After school, Lunch)</option>
+          <option value="nameOverview">Name + Overview — keyword search across the activity name and overview text</option>
+          <option value="studentLed">Student-Led — matches activities marked as student-led (no pattern needed)</option>
+        </select>
+        <div class="field-hint">Which part of the activity to run the pattern against. Leave blank to only filter by the type above.</div>
+      </div>
+      <div class="form-group">
+        <label>Pattern</label>
+        <input type="text" id="ff-pattern" placeholder="e.g. fall  or  after school  or  tech|computer|stem" />
+        <div class="field-hint">Regular expression matched against the selected field (case-insensitive). Use <strong>|</strong> to match multiple terms — e.g. <em>fall|autumn</em>. Leave blank for the Student-Led field or type-only filters.</div>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="ff-negate" />
+        <label for="ff-negate">Negate — activity must <strong>NOT</strong> match the pattern</label>
+      </div>
+      <div class="field-hint" style="margin-top:4px">Use this for exclusion filters. Example: "Boys Sport" = type Sport + field Name+Overview + pattern "girls" + Negate checked, so it matches sports that do <em>not</em> mention "girls".</div>
+    </div>
+    <div class="fr-panel-footer">
+      <button class="fr-cancel-btn" id="btn-cancel-flt-drawer">Cancel</button>
+      <button class="fr-save-btn" id="btn-save-filter">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- resource add/edit drawer -->
+<div id="res-drawer-overlay" class="fr-overlay">
+  <div class="fr-panel">
+    <div class="fr-panel-header">
+      <span id="res-drawer-title" class="fr-panel-title">Add Resource</span>
+      <button class="fr-panel-close" id="res-drawer-close">✕</button>
+    </div>
+    <div class="fr-panel-body">
+      <div class="form-group">
+        <label>Type <span style="color:var(--danger)">*</span></label>
+        <select id="fr-type">
+          <option value="">— Select —</option>
+          <option value="contact">Contact — a person with name, role, email, and school</option>
+          <option value="link">Link — a URL displayed as a clickable card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fr-name" placeholder="Person's full name, or the text to display for the link" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" id="fr-role" placeholder="e.g. Activities Director, Athletic Trainer — leave blank for links" />
+        <div class="field-hint">The person's title or role. Leave blank for links.</div>
+      </div>
+      <div class="form-group">
+        <label>Link / Email <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fr-link-email" placeholder="someone@epsne.org  or  https://example.com" />
+        <div class="field-hint">Email address for contacts. Full URL starting with https:// for links.</div>
+      </div>
+      <div class="form-group">
+        <label>School</label>
+        <input type="text" id="fr-school" placeholder="e.g. Elkhorn High School, EHS, ENHS — leave blank for links" />
+        <div class="field-hint">Groups this contact under a school header. EHS and Elkhorn High School are treated as the same school. Leave blank for links.</div>
+      </div>
+    </div>
+    <div class="fr-panel-footer">
+      <button class="fr-cancel-btn" id="btn-cancel-res-drawer">Cancel</button>
+      <button class="fr-save-btn" id="btn-save-resource">SAVE</button>
+    </div>
+  </div>
+</div>
+
 <!-- toast (notification) -->
 <div id="toast"></div>
 
@@ -1168,6 +1354,8 @@
     document.getElementById('admin-nav').classList.remove('visible');
     document.querySelectorAll('.nav-tab').forEach(t => { t.classList.toggle('active', t.dataset.view === 'activities'); });
     document.getElementById('view-activities').classList.remove('hidden');
+    document.getElementById('view-filters').classList.remove('active');
+    document.getElementById('view-resources-admin').classList.remove('active');
     document.getElementById('view-users').classList.remove('active');
     document.getElementById('view-changelog').classList.remove('active');
     currentUserRole = null;
@@ -1520,7 +1708,8 @@
             changesNew[key] = payload[key];
           }
         }
-        logChange('updated', payload['Name'] || oldRow['Name'], { old: changesOld, new: changesNew });
+        if (Object.keys(changesOld).length > 0)
+          logChange('updated', payload['Name'] || oldRow['Name'], { old: changesOld, new: changesNew });
       } else if (!editingId) {
         logChange('created', payload['Name'], { new: payload });
       }
@@ -1586,27 +1775,22 @@
       .replace(/"/g, '&quot;');
   }
 
-  // nav tab switching (super_admin only)
+  // nav tab switching
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      const view         = tab.dataset.view;
-      const usersView    = document.getElementById('view-users');
-      const changelogView = document.getElementById('view-changelog');
+      const view = tab.dataset.view;
+      // activities uses .hidden, all others use .active
       document.getElementById('view-activities').classList.toggle('hidden', view !== 'activities');
-      if (view === 'users') {
-        usersView.classList.add('active');
-        changelogView.classList.remove('active');
-        loadUsers();
-      } else if (view === 'changelog') {
-        usersView.classList.remove('active');
-        changelogView.classList.add('active');
-        loadChangelog();
-      } else {
-        usersView.classList.remove('active');
-        changelogView.classList.remove('active');
-      }
+      document.getElementById('view-filters').classList.toggle('active',          view === 'filters');
+      document.getElementById('view-resources-admin').classList.toggle('active',  view === 'resources-admin');
+      document.getElementById('view-users').classList.toggle('active',            view === 'users');
+      document.getElementById('view-changelog').classList.toggle('active',        view === 'changelog');
+      if      (view === 'users')            loadUsers();
+      else if (view === 'changelog')        loadChangelog();
+      else if (view === 'filters')          loadFilters();
+      else if (view === 'resources-admin')  loadResourcesAdmin();
     });
   });
 
@@ -1799,6 +1983,330 @@
     }
     return '—';
   }
+
+  // ── FILTERS CRUD ────────────────────────────────────────────────────────────
+  let allFilters     = [];
+  let editingFltId   = null;
+  let fltSaveInProg  = false;
+
+  async function loadFilters() {
+    const loading = document.getElementById('filters-loading');
+    const table   = document.getElementById('filters-table');
+    const empty   = document.getElementById('filters-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb.from('filters').select('*').order('sort_order', { ascending: true });
+    loading.style.display = 'none';
+    if (error) { showToast('Failed to load filters: ' + error.message, 'error'); return; }
+    allFilters = data || [];
+    renderFilters();
+  }
+
+  function renderFilters() {
+    const tbody = document.getElementById('filters-body');
+    const table = document.getElementById('filters-table');
+    const empty = document.getElementById('filters-empty');
+    tbody.innerHTML = '';
+    if (allFilters.length === 0) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    allFilters.forEach(f => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600">${esc(f.label || '—')}</td>
+        <td style="font-family:monospace;font-size:0.8rem;color:var(--muted)">${esc(f.key || '—')}</td>
+        <td>${esc(f.require_type || '—')}</td>
+        <td style="font-size:0.82rem">${esc(f.field || '—')}</td>
+        <td style="font-family:monospace;font-size:0.78rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(f.pattern || '')}">${esc(f.pattern || '—')}</td>
+        <td>${f.negate ? '<span class="badge badge-deleted">Yes</span>' : '—'}</td>
+        <td style="text-align:center">${f.sort_order ?? 0}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit flt-edit-btn"   data-id="${f.id}">Edit</button>
+            <button class="btn-delete flt-del-btn"  data-id="${f.id}" data-label="${esc(f.label || '')}">Delete</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.flt-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFilterDrawer(Number(btn.dataset.id)));
+    });
+    tbody.querySelectorAll('.flt-del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id    = Number(btn.dataset.id);
+        const label = btn.dataset.label;
+        if (!confirm(`Delete filter "${label}"?\n\nThis will remove it from the public filter bar immediately.`)) return;
+        const row = allFilters.find(f => f.id === id);
+        const { error } = await sb.from('filters').delete().eq('id', id);
+        if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
+        showToast(`Filter "${label}" deleted.`, 'success');
+        logChange('deleted', `[Filter] ${label}`, { old: row });
+        await loadFilters();
+      });
+    });
+  }
+
+  function openFilterDrawer(id) {
+    editingFltId = id ?? null;
+    document.getElementById('ff-label').value        = '';
+    document.getElementById('ff-key').value          = '';
+    document.getElementById('ff-order').value        = '0';
+    document.getElementById('ff-require-type').value = '';
+    document.getElementById('ff-field').value        = '';
+    document.getElementById('ff-pattern').value      = '';
+    document.getElementById('ff-negate').checked     = false;
+    document.getElementById('flt-drawer-title').textContent = 'Add Filter';
+
+    if (editingFltId != null) {
+      const f = allFilters.find(r => r.id === editingFltId);
+      if (f) {
+        document.getElementById('flt-drawer-title').textContent = 'Editing: ' + (f.label || 'Filter');
+        document.getElementById('ff-label').value        = f.label        || '';
+        document.getElementById('ff-key').value          = f.key          || '';
+        document.getElementById('ff-order').value        = f.sort_order   ?? 0;
+        document.getElementById('ff-require-type').value = f.require_type || '';
+        document.getElementById('ff-field').value        = f.field        || '';
+        document.getElementById('ff-pattern').value      = f.pattern      || '';
+        document.getElementById('ff-negate').checked     = !!f.negate;
+      }
+    }
+    document.getElementById('btn-save-filter').textContent = 'SAVE';
+    document.getElementById('btn-save-filter').disabled    = false;
+    fltSaveInProg = false;
+    document.getElementById('flt-drawer-overlay').classList.add('open');
+    document.getElementById('ff-label').focus();
+  }
+
+  function closeFilterDrawer() {
+    document.getElementById('flt-drawer-overlay').classList.remove('open');
+    editingFltId  = null;
+    fltSaveInProg = false;
+    document.getElementById('btn-save-filter').textContent = 'SAVE';
+    document.getElementById('btn-save-filter').disabled    = false;
+  }
+
+  document.getElementById('btn-add-filter').addEventListener('click', () => openFilterDrawer(null));
+  document.getElementById('flt-drawer-close').addEventListener('click', closeFilterDrawer);
+  document.getElementById('btn-cancel-flt-drawer').addEventListener('click', closeFilterDrawer);
+  document.getElementById('flt-drawer-overlay').addEventListener('click', e => { if (e.target === document.getElementById('flt-drawer-overlay')) closeFilterDrawer(); });
+
+  document.getElementById('btn-save-filter').addEventListener('click', async () => {
+    if (fltSaveInProg) return;
+    const label   = document.getElementById('ff-label').value.trim();
+    const key     = document.getElementById('ff-key').value.trim();
+    if (!label) { showToast('Label is required.', 'error'); return; }
+    if (!key)   { showToast('Key is required.', 'error'); return; }
+
+    fltSaveInProg = true;
+    const saveBtn = document.getElementById('btn-save-filter');
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled    = true;
+
+    const payload = {
+      label:        label,
+      key:          key,
+      sort_order:   parseInt(document.getElementById('ff-order').value) || 0,
+      require_type: document.getElementById('ff-require-type').value || null,
+      field:        document.getElementById('ff-field').value        || null,
+      pattern:      document.getElementById('ff-pattern').value.trim() || null,
+      negate:       document.getElementById('ff-negate').checked,
+    };
+
+    const oldRow = editingFltId != null ? allFilters.find(f => f.id === editingFltId) : null;
+    let error;
+    if (editingFltId != null) {
+      ({ error } = await sb.from('filters').update(payload).eq('id', editingFltId));
+    } else {
+      ({ error } = await sb.from('filters').insert(payload));
+    }
+
+    fltSaveInProg = false;
+    saveBtn.textContent = 'SAVE';
+    saveBtn.disabled    = false;
+
+    if (error) { showToast('Error saving filter: ' + error.message, 'error'); return; }
+
+    if (editingFltId != null && oldRow) {
+      const changesOld = {}, changesNew = {};
+      for (const k of Object.keys(payload)) {
+        if (String(payload[k] ?? '') !== String(oldRow[k] ?? '')) {
+          changesOld[k] = oldRow[k]; changesNew[k] = payload[k];
+        }
+      }
+      if (Object.keys(changesOld).length > 0)
+        logChange('updated', `[Filter] ${label}`, { old: changesOld, new: changesNew });
+    } else if (editingFltId == null) {
+      logChange('created', `[Filter] ${label}`, { new: payload });
+    }
+    showToast(editingFltId != null ? 'Filter updated!' : 'Filter added!', 'success');
+    closeFilterDrawer();
+    await loadFilters();
+  });
+
+  // ── RESOURCES CRUD ──────────────────────────────────────────────────────────
+  let allResources    = [];
+  let editingResId    = null;
+  let resSaveInProg   = false;
+
+  async function loadResourcesAdmin() {
+    const loading = document.getElementById('resources-admin-loading');
+    const table   = document.getElementById('resources-admin-table');
+    const empty   = document.getElementById('resources-admin-empty');
+    loading.style.display = 'block';
+    table.style.display   = 'none';
+    empty.style.display   = 'none';
+
+    const { data, error } = await sb.from('resources').select('*').order('type', { ascending: true }).order('name', { ascending: true });
+    loading.style.display = 'none';
+    if (error) { showToast('Failed to load resources: ' + error.message, 'error'); return; }
+    allResources = data || [];
+    renderResourcesAdmin();
+  }
+
+  function renderResourcesAdmin() {
+    const tbody = document.getElementById('resources-admin-body');
+    const table = document.getElementById('resources-admin-table');
+    const empty = document.getElementById('resources-admin-empty');
+    tbody.innerHTML = '';
+    if (allResources.length === 0) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+
+    allResources.forEach(r => {
+      const typeBadge = r.type === 'contact'
+        ? '<span class="badge badge-contact">Contact</span>'
+        : '<span class="badge badge-link">Link</span>';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${typeBadge}</td>
+        <td style="font-weight:600" title="${esc(r.name || '')}">${esc(r.name || '—')}</td>
+        <td style="color:var(--muted);font-size:0.85rem">${esc(r.role || '—')}</td>
+        <td style="font-size:0.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.link_email || '')}">${esc(r.link_email || '—')}</td>
+        <td style="color:var(--muted);font-size:0.85rem">${esc(r.school || '—')}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-edit res-edit-btn"   data-id="${r.id}">Edit</button>
+            <button class="btn-delete res-del-btn"  data-id="${r.id}" data-name="${esc(r.name || '')}">Delete</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.res-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openResourceDrawer(Number(btn.dataset.id)));
+    });
+    tbody.querySelectorAll('.res-del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id   = Number(btn.dataset.id);
+        const name = btn.dataset.name;
+        if (!confirm(`Delete "${name}"?\n\nThis will remove it from the public Resources page immediately.`)) return;
+        const row = allResources.find(r => r.id === id);
+        const { error } = await sb.from('resources').delete().eq('id', id);
+        if (error) { showToast('Failed to delete: ' + error.message, 'error'); return; }
+        showToast(`"${name}" deleted.`, 'success');
+        logChange('deleted', `[Resource] ${name}`, { old: row });
+        await loadResourcesAdmin();
+      });
+    });
+  }
+
+  function openResourceDrawer(id) {
+    editingResId = id ?? null;
+    document.getElementById('fr-type').value       = '';
+    document.getElementById('fr-name').value       = '';
+    document.getElementById('fr-role').value       = '';
+    document.getElementById('fr-link-email').value = '';
+    document.getElementById('fr-school').value     = '';
+    document.getElementById('res-drawer-title').textContent = 'Add Resource';
+
+    if (editingResId != null) {
+      const r = allResources.find(x => x.id === editingResId);
+      if (r) {
+        document.getElementById('res-drawer-title').textContent = 'Editing: ' + (r.name || 'Resource');
+        document.getElementById('fr-type').value       = r.type       || '';
+        document.getElementById('fr-name').value       = r.name       || '';
+        document.getElementById('fr-role').value       = r.role       || '';
+        document.getElementById('fr-link-email').value = r.link_email || '';
+        document.getElementById('fr-school').value     = r.school     || '';
+      }
+    }
+    document.getElementById('btn-save-resource').textContent = 'SAVE';
+    document.getElementById('btn-save-resource').disabled    = false;
+    resSaveInProg = false;
+    document.getElementById('res-drawer-overlay').classList.add('open');
+    document.getElementById('fr-type').focus();
+  }
+
+  function closeResourceDrawer() {
+    document.getElementById('res-drawer-overlay').classList.remove('open');
+    editingResId  = null;
+    resSaveInProg = false;
+    document.getElementById('btn-save-resource').textContent = 'SAVE';
+    document.getElementById('btn-save-resource').disabled    = false;
+  }
+
+  document.getElementById('btn-add-resource').addEventListener('click', () => openResourceDrawer(null));
+  document.getElementById('res-drawer-close').addEventListener('click', closeResourceDrawer);
+  document.getElementById('btn-cancel-res-drawer').addEventListener('click', closeResourceDrawer);
+  document.getElementById('res-drawer-overlay').addEventListener('click', e => { if (e.target === document.getElementById('res-drawer-overlay')) closeResourceDrawer(); });
+
+  document.getElementById('btn-save-resource').addEventListener('click', async () => {
+    if (resSaveInProg) return;
+    const type  = document.getElementById('fr-type').value;
+    const name  = document.getElementById('fr-name').value.trim();
+    const linkEmail = document.getElementById('fr-link-email').value.trim();
+    if (!type)      { showToast('Type is required.', 'error'); return; }
+    if (!name)      { showToast('Name is required.', 'error'); return; }
+    if (!linkEmail) { showToast('Link / Email is required.', 'error'); return; }
+
+    resSaveInProg = true;
+    const saveBtn = document.getElementById('btn-save-resource');
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled    = true;
+
+    const payload = {
+      type:       type,
+      name:       name,
+      role:       document.getElementById('fr-role').value.trim()   || null,
+      link_email: linkEmail,
+      school:     document.getElementById('fr-school').value.trim() || null,
+    };
+
+    const oldRow = editingResId != null ? allResources.find(r => r.id === editingResId) : null;
+    let error;
+    if (editingResId != null) {
+      ({ error } = await sb.from('resources').update(payload).eq('id', editingResId));
+    } else {
+      ({ error } = await sb.from('resources').insert(payload));
+    }
+
+    resSaveInProg = false;
+    saveBtn.textContent = 'SAVE';
+    saveBtn.disabled    = false;
+
+    if (error) { showToast('Error saving resource: ' + error.message, 'error'); return; }
+
+    if (editingResId != null && oldRow) {
+      const changesOld = {}, changesNew = {};
+      for (const k of Object.keys(payload)) {
+        if (String(payload[k] ?? '') !== String(oldRow[k] ?? '')) {
+          changesOld[k] = oldRow[k]; changesNew[k] = payload[k];
+        }
+      }
+      if (Object.keys(changesOld).length > 0)
+        logChange('updated', `[Resource] ${name}`, { old: changesOld, new: changesNew });
+    } else if (editingResId == null) {
+      logChange('created', `[Resource] ${name}`, { new: payload });
+    }
+    showToast(editingResId != null ? 'Resource updated!' : 'Resource added!', 'success');
+    closeResourceDrawer();
+    await loadResourcesAdmin();
+  });
+  // ── end filters & resources ─────────────────────────────────────────────────
 
   // add user drawer and button and stuff
   document.getElementById('btn-add-user').addEventListener('click', () => {
