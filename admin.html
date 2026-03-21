@@ -777,7 +777,7 @@
     #view-changelog { display: none; flex: 1; flex-direction: column; }
     #view-changelog.active { display: flex; }
 
-    /* filters & resources management views */
+    /* filters & resources */
     #view-filters, #view-resources-admin { display: none; flex: 1; flex-direction: column; }
     #view-filters.active, #view-resources-admin.active { display: flex; }
     .fr-toolbar { background: var(--card); border-bottom: 2px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -785,7 +785,7 @@
     .fr-table-wrap { flex: 1; overflow-x: auto; padding: 24px; }
     .btn-fr-add { background: var(--red); color: var(--white); border: none; border-radius: 8px; font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; padding: 9px 20px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
     .btn-fr-add:hover { background: #c50024; }
-    /* shared side-drawer for filters & resources - mirrors existing #drawer pattern */
+    /* drawer for f&r (filters & resources) */
     .fr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; justify-content: flex-end; }
     .fr-overlay.open { display: flex; }
     .fr-panel { background: var(--card); width: 100%; max-width: 520px; height: 100vh; overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; animation: slideIn 0.25s ease; }
@@ -909,7 +909,7 @@
     </div>
   </div>
 
-  <!-- filters management -->
+  <!-- filters stuff -->
   <div id="view-filters">
     <div class="fr-toolbar">
       <span class="fr-toolbar-label">Manage filter chips shown on the public activities page</span>
@@ -936,7 +936,7 @@
     </div>
   </div>
 
-  <!-- resources management -->
+  <!-- resources stuff -->
   <div id="view-resources-admin">
     <div class="fr-toolbar">
       <span class="fr-toolbar-label">Manage contacts and links shown on the public Resources page</span>
@@ -1148,7 +1148,7 @@
   </div>
 </div>
 
-<!-- filter add/edit drawer -->
+<!-- new filter drawer -->
 <div id="flt-drawer-overlay" class="fr-overlay">
   <div class="fr-panel">
     <div class="fr-panel-header">
@@ -1211,7 +1211,7 @@
   </div>
 </div>
 
-<!-- resource add/edit drawer -->
+<!-- new resource drawer -->
 <div id="res-drawer-overlay" class="fr-overlay">
   <div class="fr-panel">
     <div class="fr-panel-header">
@@ -1370,7 +1370,7 @@
     loginScreen.style.display = 'none';
     adminScreen.style.display = 'flex';
     btnLogout.style.display   = 'block';
-    // show the tab nav for all admins; hide User mgmt tab for non-super_admins
+    // show the tab nav for all admins; hide user mgmt tab for non-super_admins
     document.getElementById('admin-nav').classList.add('visible');
     document.querySelector('.nav-tab[data-view="users"]').style.display = role === 'super_admin' ? '' : 'none';
   }
@@ -1750,10 +1750,6 @@
   }
 
   // change_log
-  // logs a change to the change_log table without blocking the UI.
-  // action: either created, updatated, or deleted
-  // activityName: self explanatory
-  // changes:      { old: {...}, new: {...} } - uses jsonb to store before and after values
   function logChange(action, activityName, changes) {
     sb.from('change_log').insert({
       user_id:    currentUserId,
@@ -1944,7 +1940,7 @@
       const actionClass = entry.action === 'created' ? 'badge-created'
                         : entry.action === 'deleted'  ? 'badge-deleted'
                         :                              'badge-updated';
-      const summary    = formatChangeSummary(entry.action, entry.changes);
+      const summary    = formatChangeSummary(entry.action, entry.changes, entry.activity);
       const detailJson = entry.changes ? JSON.stringify(entry.changes, null, 2) : '';
 
       tr.innerHTML = `
@@ -1965,10 +1961,14 @@
          + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
 
-  function formatChangeSummary(action, changes) {
+  function formatChangeSummary(action, changes, name) {
     if (!changes) return '—';
-    if (action === 'created') return 'Activity created';
-    if (action === 'deleted') return 'Activity deleted';
+    if (action === 'created' && name.startsWith('[Filter]')) return 'Filter created';
+    if (action === 'deleted' && name.startsWith('[Filter]')) return 'Filter deleted';
+    if (action === 'created' && name.startsWith('[Resource]')) return 'Resource created';
+    if (action === 'deleted' && name.startsWith('[Resource]')) return 'Resource deleted';
+    if (action === 'created' && !name.startsWith('[Filter]') && !name.startsWith('[Resource]')) return 'Activity created';
+    if (action === 'deleted' && !name.startsWith('[Filter]') && !name.startsWith('[Resource]')) return 'Activity deleted';
     if (action === 'updated') {
       const fields = Object.keys(changes.old || {});
       if (fields.length === 0) return 'No fields changed';
@@ -1984,7 +1984,7 @@
     return '—';
   }
 
-  // ── FILTERS CRUD ────────────────────────────────────────────────────────────
+  // filters stuff
   let allFilters     = [];
   let editingFltId   = null;
   let fltSaveInProg  = false;
@@ -2147,7 +2147,7 @@
     await loadFilters();
   });
 
-  // ── RESOURCES CRUD ──────────────────────────────────────────────────────────
+  // resources stuff
   let allResources    = [];
   let editingResId    = null;
   let resSaveInProg   = false;
@@ -2306,7 +2306,6 @@
     closeResourceDrawer();
     await loadResourcesAdmin();
   });
-  // ── end filters & resources ─────────────────────────────────────────────────
 
   // add user drawer and button and stuff
   document.getElementById('btn-add-user').addEventListener('click', () => {
