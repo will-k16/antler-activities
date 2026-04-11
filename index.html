@@ -245,11 +245,12 @@
       color: var(--card-muted);
       line-height: 1.7;
     }
-    .card-coaches a {
-      color: var(--card-muted);
-      text-decoration: none;
+    .card-coaches {
+      user-select: none;
     }
-    .card-coaches a:hover { color: var(--gold); }
+    .card-email {
+      color: var(--card-muted);
+    }
     .card-overview {
       font-size: 0.82rem;
       color: var(--card-muted);
@@ -350,8 +351,10 @@
     .modal-coaches a {
       color: var(--card-muted);
       text-decoration: none;
+      cursor: pointer;
     }
-    .modal-coaches a:hover { color: var(--gold); text-decoration: underline; }
+    .modal-coaches a:hover { color: #0055aa; text-decoration: underline; }
+    [data-theme="dark"] .modal-coaches a:hover { color: var(--gold); }
     .modal-section-heading {
       font-family: 'Oswald', sans-serif;
       font-size: 1rem;
@@ -618,6 +621,41 @@
       color: var(--load-color);
       letter-spacing: 2px;
     }
+    /* clipboard toast */
+    #copy-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #222;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #copy-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .copy-email-btn {
+      color: var(--card-muted);
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font: inherit;
+      padding: 0;
+    }
+    .copy-email-btn:hover { color: #0055aa; text-decoration: underline; }
+    [data-theme="dark"] .copy-email-btn:hover { color: var(--gold); }
+    .contact-email .copy-email-btn { color: var(--card-link); font-size: 0.8rem; }
+    .contact-phone { font-size: 0.8rem; color: var(--card-muted); margin-top: 4px; }
     /* footer with our names and stuff */
     footer {
       background: #000000;
@@ -690,13 +728,13 @@
       </div>
       <div id="resview-calendar">
         <iframe
-          src="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14"
+          src="https://gobound.com/ne/schools/elkhorn/calendar"
           class="calendar-frame"
           title="Activities Calendar"
           allowfullscreen
           loading="lazy"
         ></iframe>
-        <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar?includePractices=false&v=week&date=2026-03-14" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
+        <p class="calendar-fallback">If the calendar does not load, <a href="https://gobound.com/ne/schools/elkhorn/calendar" target="_blank" rel="noopener noreferrer">open it directly on GoBound</a>.</p>
       </div>
       <div id="resview-contacts" style="display:none">
         <div id="contacts-loading" class="res-loading" style="display:none"><div class="spinner"></div>Loading…</div>
@@ -708,6 +746,7 @@
       </div>
     </div>
   </main>
+  <div id="copy-toast">Copied to clipboard!</div>
   <!-- sneaky little footer with our names ;) -->
   <footer>
 Developed under the direction of Elkhorn Public School District in partnership with EHS student developers Will Kolander (epswkolander01@epsne.org) & Brenden Fisher (epsbfisher01@epsne.org).
@@ -813,6 +852,16 @@ For inquiries, please contact anyone in the development team above.
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     }
+    // clipboard copy with toast
+    var _toastTimer = null;
+    function copyEmail(email) {
+      navigator.clipboard.writeText(email).then(function() {
+        var toast = document.getElementById('copy-toast');
+        toast.classList.add('show');
+        if (_toastTimer) clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2000);
+      });
+    }
     // shortening length of overview
     function truncate(str, len) {
       if (!str) return '';
@@ -825,9 +874,9 @@ For inquiries, please contact anyone in the development team above.
       card.setAttribute('tabindex', '0');
       card.setAttribute('role', 'button');
       card.setAttribute('aria-label', 'Expand ' + item.name);
-      var coachHtml = '<span>' + esc(item.coachName1) + ' &ndash; <a href="mailto:' + esc(item.coachEmail1) + '" onclick="event.stopPropagation()">' + esc(item.coachEmail1) + '</a></span>';
+      var coachHtml = '<span>' + esc(item.coachName1) + ' &ndash; <span class="card-email">' + esc(item.coachEmail1) + '</span></span>';
       if (item.coachName2) {
-        coachHtml += '<br><span>' + esc(item.coachName2) + ' &ndash; <a href="mailto:' + esc(item.coachEmail2) + '" onclick="event.stopPropagation()">' + esc(item.coachEmail2) + '</a></span>';
+        coachHtml += '<br><span>' + esc(item.coachName2) + ' &ndash; <span class="card-email">' + esc(item.coachEmail2) + '</span></span>';
       }
       var overviewHtml = item.overview ? '<div class="card-overview">' + esc(truncate(item.overview, 100)) + '</div>' : '';
       card.innerHTML =
@@ -1030,7 +1079,8 @@ For inquiries, please contact anyone in the development team above.
           html += '<div class="contact-card">';
           html += '<div class="contact-name">' + esc(c.name || '') + '</div>';
           if (c.role) html += '<div class="contact-role">' + esc(c.role) + '</div>';
-          if (c.link_email) html += '<div class="contact-email"><a href="mailto:' + esc(c.link_email) + '">' + esc(c.link_email) + '</a></div>';
+          if (c.link_email) html += '<div class="contact-email"><a class="copy-email-btn" onclick="copyEmail(\'' + esc(c.link_email) + '\')" title="Click to copy">' + esc(c.link_email) + '</a></div>';
+          if (c.phone) html += '<div class="contact-phone">' + esc(c.phone) + '</div>';
           html += '</div>';
         });
         html += '</div></div>';
@@ -1070,9 +1120,9 @@ For inquiries, please contact anyone in the development team above.
         html += '<span class="modal-student-led-badge">&#9733; Student-Led</span>';
       }
       html += '<div class="modal-coaches">';
-      html += esc(item.coachName1) + ' &ndash; <a href="mailto:' + esc(item.coachEmail1) + '">' + esc(item.coachEmail1) + '</a>';
+      html += esc(item.coachName1) + ' &ndash; <a class="copy-email-btn" onclick="copyEmail(\'' + esc(item.coachEmail1) + '\')" title="Click to copy">' + esc(item.coachEmail1) + '</a>';
       if (item.coachName2) {
-        html += '<br>' + esc(item.coachName2) + ' &ndash; <a href="mailto:' + esc(item.coachEmail2) + '">' + esc(item.coachEmail2) + '</a>';
+        html += '<br>' + esc(item.coachName2) + ' &ndash; <a class="copy-email-btn" onclick="copyEmail(\'' + esc(item.coachEmail2) + '\')" title="Click to copy">' + esc(item.coachEmail2) + '</a>';
       }
       html += '</div>';
       if (item.overview) {
